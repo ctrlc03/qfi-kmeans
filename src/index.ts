@@ -1,5 +1,7 @@
 import { Cluster, Coefficent, VotersCoefficients } from "./interfaces";
-const maxContribution = 50
+
+const MAX_CONTRIBUTION_AMOUNT = 50
+const MAX_ITERATIONS = 100
 
 /**
  * Generate a random integer between min and max
@@ -47,7 +49,7 @@ export const generateVector = (indexes: number[], projects: number): number[] =>
         // if the counter is < the indexes length and is equal to the current index
         if (indexCounter < indexes.length && i === indexes[indexCounter]) {
             // add a random number
-            vector.push(randomIntegerIncluded(1, maxContribution))
+            vector.push(randomIntegerIncluded(1, MAX_CONTRIBUTION_AMOUNT))
             // increase counter
             indexCounter++
         } else {
@@ -65,7 +67,7 @@ export const generateVector = (indexes: number[], projects: number): number[] =>
  * @param projects <number> The number of projects
  * @returns <number[][]> The generated votes
  */
-const generateVotes = (voters: number, projects: number): number[][] => {
+export const generateVotes = (voters: number, projects: number): number[][] => {
     const votes: number[][] = []
     // first generate the indexes
     for (let i = 0; i < voters; i++) {
@@ -263,19 +265,20 @@ const calculateQFPerProject = (
 
     // loop through votes array
     for (let i = 0; i < votes.length; i++) {
-        const singleVoteComputation = votes[i][projectIndex] * votersCoefficients[i].coefficent
-        sum += Math.sqrt(singleVoteComputation)
+        sum += Math.sqrt(votes[i][projectIndex] * votersCoefficients[i].coefficent)
     }
 
     return Math.pow(sum, 2)
 }
 
-// run the program
-const main = () => {
-    const voters = 100
-    const projects = 10
-    const k = 5
-
+/**
+ * Perform all the calculations for the QF round 
+ * @param voters <number> The number of voters
+ * @param projects <number> The number of projects
+ * @param k <number> The number of clusters
+ * @return <number[]> The QF results
+ */
+export const kmeansQF = (voters: number, projects: number, k: number): number[] => {
     // generate random votes
     const votes = generateVotes(voters, projects)
 
@@ -285,7 +288,7 @@ const main = () => {
     let assignments: number[] = []
 
     // loop per max iterations
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
         // assign each vote to a cluster
         assignments = assignVotesToClusters(votes, centroids)
         // update centroids 
@@ -297,12 +300,12 @@ const main = () => {
     }
 
     // results
-    console.log("Centroids", centroids)
-    console.log("Assignments", assignments)
+    console.log("Final Centroids", centroids)
+    console.log("Final Assignments", assignments)
 
     // now calculate the clusters size 
     const sizes = calculateClustersSize(assignments)
-    console.log("Sizes", sizes)
+    console.log("Cluster Sizes", sizes)
 
     // calculate the coefficents
     const coefficents = calculateCoefficents(sizes)
@@ -312,10 +315,23 @@ const main = () => {
     console.log("Voters coefficients", votersCoefficients)
 
     // QF calculations
+    let qfs: number[] = []
     for (let i = 0; i < projects; i++) {
         const qf = calculateQFPerProject(votersCoefficients, votes, i)
         console.log(`QF for project at index ${i}:`, qf)
+        qfs.push(qf)
     }
+
+    return qfs
+}
+
+// run the program
+const main = () => {
+    const voters = 100
+    const projects = 10
+    const k = 5
+
+    kmeansQF(voters, projects, k)
 }
 
 main()
