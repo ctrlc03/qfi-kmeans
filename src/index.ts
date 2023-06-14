@@ -1,3 +1,4 @@
+import { Cluster, Coefficent, VotersCoefficients } from "./interfaces";
 const maxContribution = 50
 
 /**
@@ -67,8 +68,9 @@ export const generateVector = (indexes: number[], projects: number): number[] =>
 const generateVotes = (voters: number, projects: number): number[][] => {
     const votes: number[][] = []
     // first generate the indexes
-    const indexes = generateIndexes(projects)
     for (let i = 0; i < voters; i++) {
+        const indexes = generateIndexes(projects)
+
         // generate the vector with the votes of each voter
         votes.push(generateVector(indexes, projects))
     }
@@ -128,7 +130,7 @@ export const calculateDistance = (votes1: number[], votes2: number[], numberOfPr
  * @param centroids <number[][]> The centroids
  * @returns <number[]> The centeroid to which each array of votes is assigned to
  */
-const assignVotesToClusters = (votes: number[][], centroids: number[][]): number[] => {
+export const assignVotesToClusters = (votes: number[][], centroids: number[][]): number[] => {
     const assignments: number[] = []
     // loop through each vote
     for (const vote of votes) {
@@ -158,7 +160,7 @@ const assignVotesToClusters = (votes: number[][], centroids: number[][]): number
  * @param projectsLength <number> The number of projects
  * @returns <number[][]> The updated centroids
  */
-const updateCentroids = (votes: number[][], assignments: number[], k: number, projectsLength: number): number[][] => {
+export const updateCentroids = (votes: number[][], assignments: number[], k: number, projectsLength: number): number[][] => {
     const newCentroids: number[][] = []
     // loop through the clusters
     for (let i = 0; i < k; i++) {
@@ -181,17 +183,12 @@ const updateCentroids = (votes: number[][], assignments: number[], k: number, pr
     return newCentroids
 }
 
-interface Cluster {
-    index: number
-    size: number
-}
-
 /**
  * Calculate how many votes are assigned to each cluster
  * @param assignments <number[]> The assignments
  * @returns <Cluster[]> The size of each cluster
  */
-const calculateClustersSize = (assignments: number[]): Cluster[] => {
+export const calculateClustersSize = (assignments: number[]): Cluster[] => {
     const clustersSize: Cluster[] = []
     // loop through the assignments
     for (const assignment of assignments) {
@@ -209,17 +206,12 @@ const calculateClustersSize = (assignments: number[]): Cluster[] => {
     return clustersSize
 }
 
-interface Coefficent {
-    clusterIndex: number
-    coefficent: number
-}
-
 /**
  * Calculate the coefficents for each cluster
  * @param clustersSize <Cluster[]> The object of clusters size
  * @returns <Coefficent[]> The coefficents
  */
-const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
+export const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
     const coefficents: Coefficent[] = []
     // loop through all the clusters
     for (const clusterSize of clustersSize) {
@@ -233,35 +225,50 @@ const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
     return coefficents
 }
 
-interface UserCoefficient {
-    userIndex: number
-    coefficent: number
+/**
+ * Assign each voter to its coefficient and cluster number
+ * @param assignments <number[]> The assignments
+ * @param coefficents <Coefficent[]> The coefficents
+ * @returns <VotersCoefficents[]> The voters coefficents
+ */
+export const assignVotersCoefficient = (assignments: number[], coefficents: Coefficent[]): VotersCoefficients[] => {
+    const votersCoefficients: VotersCoefficients[] = []
+    for (let i=0; i < assignments.length; i++) {
+        const voterCoefficient = {
+            voterIndex: i,
+            clusterIndex: assignments[i],
+            coefficent: coefficents.find(coefficent => coefficent.clusterIndex === assignments[i])?.coefficent || 0
+        }
+        votersCoefficients.push(voterCoefficient)
+    }
+
+    return votersCoefficients
 }
 
 /**
- * Get the coefficents for each user
- * @param coefficients <Coefficent[]> The coefficents
- * @param voters <number> The number of voters
- * @returns <UserCoefficient[]> The coefficents for each user
+ * Calculate the matching amount per project based on the votes
+ * and the coefficients
+ * @param votersCoefficients <VotersCoefficients[]> The voters coefficents
+ * @param votes <number[][]> The votes
+ * @param projectIndex <number> The project index
+ * @returns 
  */
-const getVoterCoefficient = (coefficients: Coefficent, voters: number): UserCoefficient[] =>{
-    const UserCoefficients: UserCoefficient[] = []
-    // loop through the voters
-    for (let i = 0; i < voters; i++) {
+const calculateQFPerProject = (
+    votersCoefficients: VotersCoefficients[], 
+    votes: number[][], 
+    projectIndex: number
+    ): number => {
+    // =SUM([vote1User1*s,vote1User2*r,vote1User3*t]**0.5)**2
+    let sum = 0
 
+    // loop through votes array
+    for (let i = 0; i < votes.length; i++) {
+        const singleVoteComputation = votes[i][projectIndex] * votersCoefficients[i].coefficent
+        sum += Math.sqrt(singleVoteComputation)
     }
+
+    return Math.pow(sum, 2)
 }
-
-// interface VoteCoefficient {
-//     voteIndex: number
-//     coefficent: number
-//     vote: number 
-//     projectIndex: number 
-// }
-
-// const getVoteCoefficient = (coefficients: Coefficent, votes: number[][]): number[][] => {
-    
-// }
 
 // run the program
 const main = () => {
@@ -274,9 +281,7 @@ const main = () => {
 
     // calulate the centroids
     let centroids = calculateCentroids(k, votes)
-    console.log(votes)
-    console.log(centroids)
-
+    // store the assignments to the centroid for each vote
     let assignments: number[] = []
 
     // loop per max iterations
@@ -303,8 +308,14 @@ const main = () => {
     const coefficents = calculateCoefficents(sizes)
     console.log("Coefficents", coefficents)
 
-    // get the coefficent for each vector of votes
+    const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
+    console.log("Voters coefficients", votersCoefficients)
 
+    // QF calculations
+    for (let i = 0; i < projects; i++) {
+        const qf = calculateQFPerProject(votersCoefficients, votes, i)
+        console.log(`QF for project at index ${i}:`, qf)
+    }
 }
 
 main()
