@@ -1,4 +1,4 @@
-import { Cluster, Coefficent, VotersCoefficients } from "./interfaces";
+import { Cluster, Coefficent, KMeansQF, VotersCoefficients } from "./interfaces";
 
 const MAX_CONTRIBUTION_AMOUNT = 50
 const MAX_ITERATIONS = 100
@@ -9,7 +9,7 @@ const MAX_ITERATIONS = 100
  * @param max <number> The maximum value
  * @returns <number> A random integer between min and max
  */
-const randomIntegerIncluded = (min: number, max: number): number => {
+export const randomIntegerIncluded = (min: number, max: number): number => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
@@ -272,13 +272,31 @@ const calculateQFPerProject = (
 }
 
 /**
+ * Calculate the QF for each project
+ * @param votes <number[][]> The votes
+ * @param projectIndex <number> The project index
+ * @returns <number> The QF for the project
+ */
+export const calculateTraditionalQF = (
+    votes: number[][],
+    projectIndex: number 
+): number => {
+    let sum = 0
+    for (let i = 0; i < votes.length; i++) {
+        sum += Math.sqrt(votes[i][projectIndex])
+    }
+
+    return Math.pow(sum, 2)
+}
+
+/**
  * Perform all the calculations for the QF round 
  * @param voters <number> The number of voters
  * @param projects <number> The number of projects
  * @param k <number> The number of clusters
  * @return <number[]> The QF results
  */
-export const kmeansQF = (voters: number, projects: number, k: number): number[] => {
+export const kmeansQF = (voters: number, projects: number, k: number): KMeansQF => {
     // generate random votes
     const votes = generateVotes(voters, projects)
 
@@ -299,30 +317,33 @@ export const kmeansQF = (voters: number, projects: number, k: number): number[] 
         centroids = newCentroids
     }
 
-    // results
-    console.log("Final Centroids", centroids)
-    console.log("Final Assignments", assignments)
-
     // now calculate the clusters size 
     const sizes = calculateClustersSize(assignments)
-    console.log("Cluster Sizes", sizes)
 
     // calculate the coefficents
     const coefficents = calculateCoefficents(sizes)
-    console.log("Coefficents", coefficents)
 
+    // associate coefficients with voters
     const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
-    console.log("Voters coefficients", votersCoefficients)
 
     // QF calculations
-    let qfs: number[] = []
+    const qfs: number[] = []
     for (let i = 0; i < projects; i++) {
-        const qf = calculateQFPerProject(votersCoefficients, votes, i)
-        console.log(`QF for project at index ${i}:`, qf)
-        qfs.push(qf)
+        qfs.push(calculateQFPerProject(votersCoefficients, votes, i))
     }
 
-    return qfs
+    return {
+        voters: voters,
+        projects: projects,
+        k: k,
+        votes: votes,
+        centroids: centroids,
+        clusters: sizes,
+        coefficients: coefficents,
+        votersCoefficients: votersCoefficients,
+        assignmnets: assignments,
+        qfs: qfs
+    }
 }
 
 // run the program
@@ -331,7 +352,37 @@ const main = () => {
     const projects = 10
     const k = 5
 
-    kmeansQF(voters, projects, k)
+    const data = kmeansQF(voters, projects, k)
+
+    console.log("Voters", data.voters)
+    console.log("Projects", data.projects)
+    console.log("K", data.k)
+    console.log("Centroids", data.centroids)
+    console.log("Clusters size", data.clusters)
+    console.log("Assignments", data.assignmnets)
+    console.log("Coefficients", data.coefficients)
+    console.log("Voters Coefficients", data.votersCoefficients)
+    console.log("QF allocations", data.qfs)
+
+    // print out the allocation using the traditional QF method
+    for (let i = 0; i < projects; i++) {
+        console.log("Traditional QF allocation", calculateTraditionalQF(data.votes, i))
+    }
+
+    // sum up all the votes (contributions)
+    let votesSum = 0
+    for (const sum of data.votes) votesSum += sum.reduce((a, b) => a + b, 0)
+    console.log("Total contributed", votesSum)
+
+    // total contribution for each project 
+    for (let i = 0; i < projects; i++) {
+        let sum = 0
+        for (let j = 0; j < voters; j++) {
+            sum += data.votes[j][i]
+        }
+        console.log(`Total contributed for project ${i}`, sum)
+    }
 }
+
 
 main()
