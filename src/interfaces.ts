@@ -27,3 +27,13 @@ export interface KMeansQF {
     qfs: number[]
     iterations: number 
 }
+
+
+export interface Vote {
+    voteOption: number 
+    voteWeight: number 
+}
+
+export interface UserBallot {
+    votes: Vote[]
+}

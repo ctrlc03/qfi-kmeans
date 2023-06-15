@@ -1,21 +1,5 @@
-import { Cluster, Coefficent, KMeansQF, VotersCoefficients } from "./interfaces";
-
-// the maximum amount that a user can contribute to a project
-const MAX_CONTRIBUTION_AMOUNT = 50
-// how many times should we run the algorithm
-const MAX_ITERATIONS = 100
-// @todo calculate tolerance based on the number of projects, voters, vote amounts
-const TOLERANCE = 0.001
-
-/**
- * Generate a random integer between min and max
- * @param min <number> The minimum value
- * @param max <number> The maximum value
- * @returns <number> A random integer between min and max
- */
-export const randomIntegerIncluded = (min: number, max: number): number => {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+import { Cluster, Coefficent, KMeansQF, UserBallot, Vote, VotersCoefficients } from "./interfaces"
+import { MAX_CONTRIBUTION_AMOUNT, MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded } from "./utilities"
 
 /**
  * Generate the indexes for the projects which have votes
@@ -91,6 +75,8 @@ export const generateVotes = (voters: number, projects: number): number[][] => {
  * @param votes <number[][]> The votes
  * @returns <number[][]> The centroids
  */
+// @todo wrong using randomInegerIncluded(0, votes.length - 1)
+// it should be using the amount of voters
 export const calculateCentroids = (k: number, votes: number[][]): number[][] => {
     const centroids: number[][] = []
     const selectedIndexes: number[] = []
@@ -526,4 +512,4 @@ const main = () => {
 }
 
 
-main()
+// main()

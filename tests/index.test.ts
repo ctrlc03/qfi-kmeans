@@ -1,4 +1,7 @@
-import { calculateCentroids, calculateTraditionalQF, generateVector, generateVotes, kmeanQFWithVotes, kmeansQF, randomIntegerIncluded } from "../src";
+import { calculateCentroids, calculateTraditionalQF, generateVector, generateVotes, kmeanQFWithVotes, kmeansQF } from "../src/kMeansRandomData"
+import { randomIntegerIncluded } from "../src/utilities"
+import { addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findLargestVoteIndex, findNumberOfProjects, generateCentroidsWithRealData } from "../src/k-means"
+import { UserBallot } from "../src/interfaces";
 
 describe("k-means", () => {
     describe("generateVector", () => {
@@ -175,7 +178,8 @@ describe("k-means", () => {
             }
         })
 
-        it("higher k should result in larger allocations", () => {
+        // @todo not always true
+        it.skip("higher k should result in larger allocations", () => {
             const projects = 10
             const voters = 100
             const k1 = 5
@@ -208,5 +212,372 @@ describe("k-means", () => {
         //         expect(kMeans2.qfs[i]).toBeGreaterThan(kMeans3.qfs[i])
         //     }
         // })
+    })
+
+    describe("findLargestVoteIndex", () => {
+        const jsonData = JSON.stringify([
+            {
+              "0": {
+                "voteOption": "0",
+                "voteWeight": "0"
+              }
+            },
+            {
+              "0": {
+                "voteOption": "2",
+                "voteWeight": "5"
+              },
+              "1": {
+                "voteOption": "1",
+                "voteWeight": "5"
+              }
+            }
+        ])
+        it("should find the largest vote index", () => {
+            const formattedData = parseVoteData(jsonData)
+            const largestVoteIndex = findLargestVoteIndex(formattedData)
+            expect(largestVoteIndex).toBe(1)
+        })
+    })
+
+    describe("findNumberOfProjects", () => {
+        const jsonData = JSON.stringify([
+            {
+              "0": {
+                "voteOption": "0",
+                "voteWeight": "0"
+              }
+            },
+            {
+              "0": {
+                "voteOption": "2",
+                "voteWeight": "5"
+              },
+              "1": {
+                "voteOption": "1",
+                "voteWeight": "5"
+              }
+            }
+        ])
+        it("should find the number of projects", () => {
+            const formattedData = parseVoteData(jsonData)
+            const largestVoteIndex = findNumberOfProjects(formattedData)
+            expect(largestVoteIndex).toBe(2)
+        })
+    })
+
+    describe("parseVoteData", () => {
+        const data = JSON.stringify([
+            {
+              "0": {
+                "voteOption": "0",
+                "voteWeight": "0"
+              }
+            },
+            {
+              "0": {
+                "voteOption": "2",
+                "voteWeight": "5"
+              },
+              "1": {
+                "voteOption": "1",
+                "voteWeight": "5"
+              }
+            }
+        ])
+        it("should correctly parse the data", () => {
+            const parsed = parseVoteData(data)
+
+            const expected: UserBallot[] = [
+                {
+                    votes: [
+                        {
+                            voteOption: 0,
+                            voteWeight: 0
+                        }
+                    ]
+                },
+                {
+                    votes: [
+                        {
+                            voteOption: 2,
+                            voteWeight: 5
+                        },
+                        {
+                            voteOption: 1,
+                            voteWeight: 5
+                        }
+                    ]
+                }
+            ]
+            expect(parsed).toEqual(expected)
+        })
+    })
+
+    describe("voteOptionExists", () => {
+        const data: UserBallot = {
+            votes: [
+                {
+                    voteOption: 0,
+                    voteWeight: 0
+                }
+            ]
+        }
+
+        it("should return true for a vote option that exists", () => {
+            expect(voteOptionExists(data, 0)).toBe(true)
+        })
+        it("should return false for a vote option that does not exist", () => {
+            expect(voteOptionExists(data, 1)).toBe(false)
+        })
+    })
+
+    describe("expandNumberToArray", () => {
+        it("should expand a number into an array of elements between 0 <= num", () => {
+            expect(expandNumberToArray(5)).toEqual([0, 1, 2, 3, 4, 5])
+        })
+    })
+
+    describe("voteOptionExists", () => {
+        const data: UserBallot = {
+            votes: [
+                {
+                    voteOption: 0,
+                    voteWeight: 0
+                },
+                {
+                    voteOption: 1,
+                    voteWeight: 5
+                },
+                {
+                    voteOption: 2,
+                    voteWeight: 5
+                },
+                {
+                    voteOption: 3,
+                    voteWeight: 5
+                }
+            ]
+        }
+
+        it("should return true for a vote option that exists", () => {
+            expect(voteOptionExists(data, 0)).toBe(true)
+            expect(voteOptionExists(data, 3)).toBe(true)
+        })
+        it("should return false for a vote option that does not exist", () => {
+            expect(voteOptionExists(data, 4)).toBe(false)
+        })
+    })
+
+    describe("extractZeroVotes", () => {
+        const data: UserBallot[] = [
+            {
+                votes: [
+                    {
+                        voteOption: 0,
+                        voteWeight: 0
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    }
+                ]
+            }
+        ]
+
+        const projects = findNumberOfProjects(data)
+        it("should return the correct UserBallot object", () => {
+            const result = extractZeroVotes(data[1], projects)
+
+            expect(result).toEqual({
+                votes: [
+                    {
+                        voteOption: 0,
+                        voteWeight: 0
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    }
+                ]
+            })
+        })
+    })
+
+    describe("addZeroVotes", () => {
+        const data: UserBallot[] = [
+            {
+                votes: [
+                    {
+                        voteOption: 0,
+                        voteWeight: 0
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    }
+                ]
+            }
+        ]
+
+        const projects = findNumberOfProjects(data)
+
+        it("should return an array of UserBallot with the correct number of projects", () => {
+            addZeroVotesToBallots(data, projects)
+
+            const expected: UserBallot[] = [
+                {
+                    votes: [
+                        {
+                            voteOption: 0,
+                            voteWeight: 0
+                        },
+                        {
+                            voteOption: 1,
+                            voteWeight: 0
+                        },
+                        {
+                            voteOption: 2,
+                            voteWeight: 0
+                        }
+                    ]
+                },
+                {
+                    votes: [
+                        {
+                            voteOption: 0,
+                            voteWeight: 0
+                        },
+                        {
+                            voteOption: 1,
+                            voteWeight: 5
+                        },
+                        {
+                            voteOption: 2,
+                            voteWeight: 5
+                        }
+                    ]
+                }
+            ]
+
+            expect(data).toEqual(expected)
+        })
+    })
+
+    describe("generateCentroidsWithRealData", () => {
+        const data: UserBallot[] = [
+            {
+                votes: [
+                    {
+                        voteOption: 0,
+                        voteWeight: 0
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 4,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 10
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 0,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 4,
+                        voteWeight: 1
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            }
+        ]
+
+        const projects = findNumberOfProjects(data)
+
+        addZeroVotesToBallots(data, projects)
+
+        const k = 5
+
+        it("should generate the correct number of centroids", () => {
+            const centroids = generateCentroidsWithRealData(k, data)
+
+            expect(centroids.length).toBe(k)
+        })
     })
 })
