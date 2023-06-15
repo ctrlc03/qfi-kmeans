@@ -1,4 +1,4 @@
-import { calculateCentroids, calculateTraditionalQF, generateVector, generateVotes, kmeansQF, randomIntegerIncluded } from "../src";
+import { calculateCentroids, calculateTraditionalQF, generateVector, generateVotes, kmeanQFWithVotes, kmeansQF, randomIntegerIncluded } from "../src";
 
 describe("k-means", () => {
     describe("generateVector", () => {
@@ -160,7 +160,7 @@ describe("k-means", () => {
     })
 
     describe("comparisons", () => {
-        it ("k-means allocations should be smaller than traditional qf", () => {
+        it("k-means allocations should be smaller than traditional qf", () => {
             const projects = 10
             const voters = 100
             const k = 5
@@ -174,5 +174,39 @@ describe("k-means", () => {
                 )
             }
         })
+
+        it("higher k should result in larger allocations", () => {
+            const projects = 10
+            const voters = 100
+            const k1 = 5
+            const k2 = 6
+            const k3 = 10
+            const votes = generateVotes(voters, projects)
+            const kMeans1 = kmeanQFWithVotes(votes, voters, projects, k1)
+            const kMeans2 = kmeanQFWithVotes(votes, voters, projects, k2)
+            const kMeans3 = kmeanQFWithVotes(votes, voters, projects, k3)
+
+            for (let i = 0; i < projects; i ++) {
+                expect(kMeans1.qfs[i]).toBeLessThan(kMeans2.qfs[i])
+                expect(kMeans2.qfs[i]).toBeLessThan(kMeans3.qfs[i])
+            }
+        })
+
+        // @todo understand how iterations change the result
+        // it("larger iterations and same k should result in larger allocations", () => {
+        //     const projects = 10
+        //     const voters = 100
+        //     const k = 5
+         
+        //     const votes = generateVotes(voters, projects)
+        //     const kMeans1 = kmeanQFWithVotes(votes, voters, projects, k, 100)
+        //     const kMeans2 = kmeanQFWithVotes(votes, voters, projects, k, 200)
+        //     const kMeans3 = kmeanQFWithVotes(votes, voters, projects, k, 300)
+
+        //     for (let i = 0; i < projects; i ++) {
+        //         expect(kMeans1.qfs[i]).toBeGreaterThan(kMeans2.qfs[i])
+        //         expect(kMeans2.qfs[i]).toBeGreaterThan(kMeans3.qfs[i])
+        //     }
+        // })
     })
 })

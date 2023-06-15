@@ -25,4 +25,5 @@ export interface KMeansQF {
     votersCoefficients: VotersCoefficients[]
     assignmnets: number[]
     qfs: number[]
+    iterations: number 
 }
