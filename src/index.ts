@@ -461,13 +461,6 @@ export const kmeansQF = (
     }
 }
 
-export const benchmarck = (votes: number, voters: number, projects: number, k: number) => {
-    const start = performance.now()
-
-    const end = performance.now()
-
-}
-
 /**
  * Run the QF algorithm multiple times and return the time it took to run
  * @param votes <number[][]> The votes
@@ -507,7 +500,7 @@ const main = () => {
     console.log("Coefficients", data.coefficients)
     console.log("Voters Coefficients", data.votersCoefficients)
     console.log("k-means QF allocations", data.qfs)
-    console.log(`We have iterated ${data.iterations} times with a tolerance of ${TOLERANCE} and MAX_ITERATIONS of ${MAX_ITERATIONS}`)
+    console.log(`We have iterated ${data.iterations} times until converged with a tolerance of ${TOLERANCE} and MAX_ITERATIONS of ${MAX_ITERATIONS}`)
 
     // print out the allocation using the traditional QF method
     for (let i = 0; i < projects; i++) {
