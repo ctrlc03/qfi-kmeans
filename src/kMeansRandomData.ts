@@ -1,12 +1,26 @@
-import { Cluster, Coefficent, KMeansQF, UserBallot, Vote, VotersCoefficients } from "./interfaces"
+import { Cluster, Coefficent, VotersCoefficients } from "./interfaces"
 import { MAX_CONTRIBUTION_AMOUNT, MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded } from "./utilities"
+
+interface KMeansQF {
+    voters: number 
+    projects: number
+    votes: number[][]
+    k: number
+    centroids: number[][]
+    clusters: Cluster[]
+    coefficients: Coefficent[]
+    votersCoefficients: VotersCoefficients[]
+    assignmnets: number[]
+    qfs: number[]
+    iterations: number 
+}
 
 /**
  * Generate the indexes for the projects which have votes
  * @param projects <number> The number of projects
  * @returns <number[]> The generated indexes
  */
-export const generateIndexes = (projects: number): number[] => {
+export const testGenerateIndexes = (projects: number): number[] => {
     // generate the amount of actual funds contributed to each project
     const unsortedIndexes: number[] = []
     for (let i = 0; i < projects; i++) {
@@ -27,7 +41,7 @@ export const generateIndexes = (projects: number): number[] => {
  * @param projects <number> The number of projects
  * @returns <number[]> The generated vector
  */
-export const generateVector = (indexes: number[], projects: number): number[] => {
+export const testGenerateVector = (indexes: number[], projects: number): number[] => {
     // the vector to return
     const vector: number[] = []
     // a counter to help with our operations
@@ -56,14 +70,14 @@ export const generateVector = (indexes: number[], projects: number): number[] =>
  * @param projects <number> The number of projects
  * @returns <number[][]> The generated votes
  */
-export const generateVotes = (voters: number, projects: number): number[][] => {
+export const testGenerateVotes = (voters: number, projects: number): number[][] => {
     const votes: number[][] = []
     // first generate the indexes
     for (let i = 0; i < voters; i++) {
-        const indexes = generateIndexes(projects)
+        const indexes = testGenerateIndexes(projects)
 
         // generate the vector with the votes of each voter
-        votes.push(generateVector(indexes, projects))
+        votes.push(testGenerateVector(indexes, projects))
     }
 
     return votes 
@@ -77,7 +91,7 @@ export const generateVotes = (voters: number, projects: number): number[][] => {
  */
 // @todo wrong using randomInegerIncluded(0, votes.length - 1)
 // it should be using the amount of voters
-export const calculateCentroids = (k: number, votes: number[][]): number[][] => {
+export const testCalculateCentroids = (k: number, votes: number[][]): number[][] => {
     const centroids: number[][] = []
     const selectedIndexes: number[] = []
     for (let i = 0; i < k; i++) {
@@ -105,7 +119,7 @@ export const calculateCentroids = (k: number, votes: number[][]): number[][] => 
  * @param numberOfProjects <number> The number of projects
  * @returns <number> The distance between the two votes
  */
-export const calculateDistance = (votes1: number[], votes2: number[], numberOfProjects: number): number => {
+export const testCalculateDistance = (votes1: number[], votes2: number[], numberOfProjects: number): number => {
     // hold tmp result
     let tmpDistance = 0
     // loop through the projects that we have 
@@ -123,7 +137,7 @@ export const calculateDistance = (votes1: number[], votes2: number[], numberOfPr
  * @param centroids <number[][]> The centroids
  * @returns <number[]> The centeroid to which each array of votes is assigned to
  */
-export const assignVotesToClusters = (votes: number[][], centroids: number[][]): number[] => {
+export const testAssignVotesToClusters = (votes: number[][], centroids: number[][]): number[] => {
     const assignments: number[] = []
     // loop through each vote
     for (const vote of votes) {
@@ -132,7 +146,7 @@ export const assignVotesToClusters = (votes: number[][], centroids: number[][]):
         // loop through the centroids
         for (let i = 0; i < centroids.length; i++) {
             // calculate the distance between the vote and the centeroid
-            const distance = calculateDistance(vote, centroids[i], vote.length)
+            const distance = testCalculateDistance(vote, centroids[i], vote.length)
             if (distance < minDistance) {
                 minDistance = distance
                 clusterIndex = i
@@ -153,7 +167,7 @@ export const assignVotesToClusters = (votes: number[][], centroids: number[][]):
  * @param projectsLength <number> The number of projects
  * @returns <number[][]> The updated centroids
  */
-export const updateCentroids = (votes: number[][], assignments: number[], k: number, projectsLength: number): number[][] => {
+export const testUpdateCentroids = (votes: number[][], assignments: number[], k: number, projectsLength: number): number[][] => {
     const newCentroids: number[][] = []
     // loop through the clusters
     for (let i = 0; i < k; i++) {
@@ -181,7 +195,7 @@ export const updateCentroids = (votes: number[][], assignments: number[], k: num
  * @param assignments <number[]> The assignments
  * @returns <Cluster[]> The size of each cluster
  */
-export const calculateClustersSize = (assignments: number[]): Cluster[] => {
+export const testCalculateClustersSize = (assignments: number[]): Cluster[] => {
     const clustersSize: Cluster[] = []
     // loop through the assignments
     for (const assignment of assignments) {
@@ -204,7 +218,7 @@ export const calculateClustersSize = (assignments: number[]): Cluster[] => {
  * @param clustersSize <Cluster[]> The object of clusters size
  * @returns <Coefficent[]> The coefficents
  */
-export const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
+export const testCalculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
     const coefficents: Coefficent[] = []
     // loop through all the clusters
     for (const clusterSize of clustersSize) {
@@ -224,7 +238,7 @@ export const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
  * @param coefficents <Coefficent[]> The coefficents
  * @returns <VotersCoefficents[]> The voters coefficents
  */
-export const assignVotersCoefficient = (assignments: number[], coefficents: Coefficent[]): VotersCoefficients[] => {
+export const testAssignVotersCoefficient = (assignments: number[], coefficents: Coefficent[]): VotersCoefficients[] => {
     const votersCoefficients: VotersCoefficients[] = []
     for (let i=0; i < assignments.length; i++) {
         const voterCoefficient = {
@@ -244,9 +258,9 @@ export const assignVotersCoefficient = (assignments: number[], coefficents: Coef
  * @param votersCoefficients <VotersCoefficients[]> The voters coefficents
  * @param votes <number[][]> The votes
  * @param projectIndex <number> The project index
- * @returns 
+ * @returns <number> The matching amount per project
  */
-const calculateQFPerProject = (
+const testCalculateQFPerProject = (
     votersCoefficients: VotersCoefficients[], 
     votes: number[][], 
     projectIndex: number
@@ -268,7 +282,7 @@ const calculateQFPerProject = (
  * @param projectIndex <number> The project index
  * @returns <number> The QF for the project
  */
-export const calculateTraditionalQF = (
+export const testCalculateTraditionalQF = (
     votes: number[][],
     projectIndex: number 
 ): number => {
@@ -288,7 +302,7 @@ export const calculateTraditionalQF = (
  * @param tolerance <number> The tolerance
  * @returns <boolean> Whether we have converged or not
  */
-export const checkConvergence = (oldCentroids: number[][], newCentroids: number[][], tolerance: number): boolean => {
+export const testCheckConvergence = (oldCentroids: number[][], newCentroids: number[][], tolerance: number): boolean => {
     // Check if the dimensions of the centroids match
     if (oldCentroids.length !== newCentroids.length || oldCentroids[0].length !== newCentroids[0].length)
         return false
@@ -315,7 +329,7 @@ export const checkConvergence = (oldCentroids: number[][], newCentroids: number[
  * @param iterations <number> The number of iterations
  * @returns <KMeansQF> The results of the QF round
  */
-export const kmeanQFWithVotes = (
+export const testKmeanQFWithVotes = (
     votes: number[][], 
     voters: number, 
     projects: number, 
@@ -324,7 +338,7 @@ export const kmeanQFWithVotes = (
     tolerance: number = TOLERANCE
     ): KMeansQF => {
     // calulate the centroids
-    let centroids = calculateCentroids(k, votes)
+    let centroids = testCalculateCentroids(k, votes)
     // store the assignments to the centroid for each vote
     let assignments: number[] = []
 
@@ -334,11 +348,11 @@ export const kmeanQFWithVotes = (
     // loop per max iterations
     for (let i = 0; i < iterations; i++) {
         // assign each vote to a cluster
-        assignments = assignVotesToClusters(votes, centroids)
+        assignments = testAssignVotesToClusters(votes, centroids)
         // update centroids 
-        const newCentroids = updateCentroids(votes, assignments, k, projects)
+        const newCentroids = testUpdateCentroids(votes, assignments, k, projects)
         // check if the centroids have converged
-        if (checkConvergence(centroids, newCentroids, tolerance)) {
+        if (testCheckConvergence(centroids, newCentroids, tolerance)) {
             actualIterations = i
             break 
         }
@@ -347,18 +361,18 @@ export const kmeanQFWithVotes = (
     }
 
     // now calculate the clusters size 
-    const sizes = calculateClustersSize(assignments)
+    const sizes = testCalculateClustersSize(assignments)
 
     // calculate the coefficents
-    const coefficents = calculateCoefficents(sizes)
+    const coefficents = testCalculateCoefficents(sizes)
 
     // associate coefficients with voters
-    const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
+    const votersCoefficients = testAssignVotersCoefficient(assignments, coefficents)
 
     // QF calculations
     const qfs: number[] = []
     for (let i = 0; i < projects; i++) {
-        qfs.push(calculateQFPerProject(votersCoefficients, votes, i))
+        qfs.push(testCalculateQFPerProject(votersCoefficients, votes, i))
     }
 
     return {
@@ -384,7 +398,7 @@ export const kmeanQFWithVotes = (
  * @param iterations <number> The number of iterations to run the algorithm for
  * @returns <KMeansQF> The results of the QF round
  */
-export const kmeansQF = (
+export const testKmeansQF = (
     voters: number, 
     projects: number, 
     k: number, 
@@ -392,10 +406,10 @@ export const kmeansQF = (
     tolerance: number = TOLERANCE
     ): KMeansQF => {
     // generate random votes
-    const votes = generateVotes(voters, projects)
+    const votes = testGenerateVotes(voters, projects)
 
     // calulate the centroids
-    let centroids = calculateCentroids(k, votes)
+    let centroids = testCalculateCentroids(k, votes)
     // store the assignments to the centroid for each vote
     let assignments: number[] = []
 
@@ -405,11 +419,11 @@ export const kmeansQF = (
     // loop per max iterations
     for (let i = 0; i < iterations; i++) {
         // assign each vote to a cluster
-        assignments = assignVotesToClusters(votes, centroids)
+        assignments = testAssignVotesToClusters(votes, centroids)
         // update centroids 
-        const newCentroids = updateCentroids(votes, assignments, k, projects)
+        const newCentroids = testUpdateCentroids(votes, assignments, k, projects)
         // check if the centroids have changed
-        if (checkConvergence(centroids, newCentroids, tolerance)) {
+        if (testCheckConvergence(centroids, newCentroids, tolerance)) {
             actualIterations = i
             break
         }
@@ -418,18 +432,18 @@ export const kmeansQF = (
     }
 
     // now calculate the clusters size 
-    const sizes = calculateClustersSize(assignments)
+    const sizes = testCalculateClustersSize(assignments)
 
     // calculate the coefficents
-    const coefficents = calculateCoefficents(sizes)
+    const coefficents = testCalculateCoefficents(sizes)
 
     // associate coefficients with voters
-    const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
+    const votersCoefficients = testAssignVotersCoefficient(assignments, coefficents)
 
     // QF calculations
     const qfs: number[] = []
     for (let i = 0; i < projects; i++) {
-        qfs.push(calculateQFPerProject(votersCoefficients, votes, i))
+        qfs.push(testCalculateQFPerProject(votersCoefficients, votes, i))
     }
 
     return {
@@ -456,11 +470,11 @@ export const kmeansQF = (
  * @param repetitions <number> The number of times to run the algorithm
  * @returns <number> The time it took to run the algorithm
  */
-export const runQFWithVotesMultipleTimes = (votes: number[][], voters: number, projects: number, k: number, repetitions: number) => {
+export const testRunQFWithVotesMultipleTimes = (votes: number[][], voters: number, projects: number, k: number, repetitions: number) => {
     const start = performance.now()
 
     for (let i = 0; i < repetitions; i++) {
-        kmeanQFWithVotes(votes, voters, projects, k)
+        testKmeanQFWithVotes(votes, voters, projects, k)
     }
 
     const end = performance.now()
@@ -475,7 +489,7 @@ const main = () => {
     const projects = 10
     const k = 5
 
-    const data = kmeansQF(voters, projects, k)
+    const data = testKmeansQF(voters, projects, k)
 
     console.log("Voters", data.voters)
     console.log("Projects", data.projects)
@@ -490,7 +504,7 @@ const main = () => {
 
     // print out the allocation using the traditional QF method
     for (let i = 0; i < projects; i++) {
-        console.log("Traditional QF allocation", calculateTraditionalQF(data.votes, i))
+        console.log("Traditional QF allocation", testCalculateTraditionalQF(data.votes, i))
     }
 
     // sum up all the votes (contributions)
@@ -508,7 +522,7 @@ const main = () => {
     }
 
     // run it multiple times
-    runQFWithVotesMultipleTimes(data.votes, voters, projects, k, 100)
+    testRunQFWithVotesMultipleTimes(data.votes, voters, projects, k, 100)
 }
 
 

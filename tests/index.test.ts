@@ -1,14 +1,14 @@
-import { calculateCentroids, calculateTraditionalQF, generateVector, generateVotes, kmeanQFWithVotes, kmeansQF } from "../src/kMeansRandomData"
+import { testCalculateCentroids, testCalculateTraditionalQF, testGenerateVector, testGenerateVotes, testKmeanQFWithVotes, testKmeansQF } from "../src/kMeansRandomData"
 import { randomIntegerIncluded } from "../src/utilities"
-import { addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findLargestVoteIndex, findNumberOfProjects, generateCentroidsWithRealData } from "../src/k-means"
+import { addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findLargestVoteIndex, findNumberOfProjects, calculateCentroids, calculateCentroidsWithIndexes, calculateDistance, assignVotesToClusters } from "../src/k-means"
 import { UserBallot } from "../src/interfaces";
 
-describe("k-means", () => {
-    describe("generateVector", () => {
+describe("test k-means with random data", () => {
+    describe("testGenerateVector", () => {
         const projects = 10
         it("should generate the correct vector for indexes [0, 4, 5, 6, 7, 8]", () => {
             const indexes = [0, 4, 5, 6, 7, 8]
-            const vector = generateVector(indexes, projects)
+            const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
     
             expect(vector[0]).toBeGreaterThan(0)
@@ -23,7 +23,7 @@ describe("k-means", () => {
         })
         it("should generate the correct vector for indexes [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]", () => {
             const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-            const vector = generateVector(indexes, projects)
+            const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
     
             expect(vector[0]).toBeGreaterThan(0)
@@ -39,7 +39,7 @@ describe("k-means", () => {
         })
         it("should generate the correct vector for indexes [0, 1, 2, 3, 4, 5, 6, 7, 8]", () => {
             const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-            const vector = generateVector(indexes, projects)
+            const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
     
             expect(vector[0]).toBeGreaterThan(0)
@@ -55,7 +55,7 @@ describe("k-means", () => {
         })
         it("should generate the correct vector for indexes [0, 1, 2, 3, 4, 5, 6, 7]", () => {
             const indexes = [0, 1, 2, 3, 4, 5, 6, 7]
-            const vector = generateVector(indexes, projects)
+            const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
     
             expect(vector[0]).toBeGreaterThan(0)
@@ -71,7 +71,7 @@ describe("k-means", () => {
         })
         it("should generate the correct vector for indexes [0, 1, 2, 3, 4, 5, 6]", () => {
             const indexes = [0, 1, 2, 3, 4, 5, 6]
-            const vector = generateVector(indexes, projects)
+            const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
     
             expect(vector[0]).toBeGreaterThan(0)
@@ -87,7 +87,7 @@ describe("k-means", () => {
         })
         it("should generate the correct vector for indexes [0, 1, 2, 3, 4, 5]", () => {
             const indexes = [0, 1, 2, 3, 4, 5]
-            const vector = generateVector(indexes, projects)
+            const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
     
             expect(vector[0]).toBeGreaterThan(0)
@@ -103,11 +103,9 @@ describe("k-means", () => {
         })
         it("should generate the correct vector for indexes [3, 4, 5, 6]", () => {
             const indexes = [3, 4, 5, 6]
-            const vector = generateVector(indexes, projects)
+            const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
-    
-            console.log("Vector", vector)
-    
+        
             expect(vector[0]).toBe(0)
             expect(vector[1]).toBe(0)
             expect(vector[2]).toBe(0)
@@ -121,7 +119,7 @@ describe("k-means", () => {
         })
         it("should generate the correct vector for indexes [2, 3, 7, 8, 9]", () => {
             const indexes = [2, 3, 7, 8, 9]
-            const vector = generateVector(indexes, projects)
+            const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
     
             expect(vector[0]).toBe(0)
@@ -137,14 +135,14 @@ describe("k-means", () => {
         })
     })
 
-    describe("calculateCentroids", () => {
+    describe("testCalculateCentroids", () => {
         const voters = 100
         const projects = 10
         const k = 5
         it("should create the correct number of centroids", () => {
             // generate random votes
-            const votes = generateVotes(voters, projects)
-            const centroids = calculateCentroids(k, votes)
+            const votes = testGenerateVotes(voters, projects)
+            const centroids = testCalculateCentroids(k, votes)
 
             expect(centroids.length).toBe(k)
         })
@@ -162,17 +160,17 @@ describe("k-means", () => {
         })
     })
 
-    describe("comparisons", () => {
+    describe("test comparisons", () => {
         it("k-means allocations should be smaller than traditional qf", () => {
             const projects = 10
             const voters = 100
             const k = 5
-            const kMeans = kmeansQF(projects, voters, k)
+            const kMeans = testKmeansQF(projects, voters, k)
             for (let i = 0; i < projects; i ++) {
                 expect(
                     kMeans.qfs[i])
                     .toBeLessThanOrEqual(
-                        calculateTraditionalQF(kMeans.votes, i
+                        testCalculateTraditionalQF(kMeans.votes, i
                     )
                 )
             }
@@ -185,10 +183,10 @@ describe("k-means", () => {
             const k1 = 5
             const k2 = 6
             const k3 = 10
-            const votes = generateVotes(voters, projects)
-            const kMeans1 = kmeanQFWithVotes(votes, voters, projects, k1)
-            const kMeans2 = kmeanQFWithVotes(votes, voters, projects, k2)
-            const kMeans3 = kmeanQFWithVotes(votes, voters, projects, k3)
+            const votes = testGenerateVotes(voters, projects)
+            const kMeans1 = testKmeanQFWithVotes(votes, voters, projects, k1)
+            const kMeans2 = testKmeanQFWithVotes(votes, voters, projects, k2)
+            const kMeans3 = testKmeanQFWithVotes(votes, voters, projects, k3)
 
             for (let i = 0; i < projects; i ++) {
                 expect(kMeans1.qfs[i]).toBeLessThan(kMeans2.qfs[i])
@@ -213,6 +211,9 @@ describe("k-means", () => {
         //     }
         // })
     })
+})
+
+describe("k-means with actual data", () => {
 
     describe("findLargestVoteIndex", () => {
         const jsonData = JSON.stringify([
@@ -484,13 +485,13 @@ describe("k-means", () => {
         })
     })
 
-    describe("generateCentroidsWithRealData", () => {
+    describe("calculateCentroids", () => {
         const data: UserBallot[] = [
             {
                 votes: [
                     {
-                        voteOption: 0,
-                        voteWeight: 0
+                        voteOption: 1,
+                        voteWeight: 3
                     }
                 ]
             },
@@ -565,6 +566,22 @@ describe("k-means", () => {
                         voteWeight: 5
                     }
                 ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 4,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 6,
+                        voteWeight: 7
+                    }
+                ]
             }
         ]
 
@@ -574,10 +591,330 @@ describe("k-means", () => {
 
         const k = 5
 
-        it("should generate the correct number of centroids", () => {
-            const centroids = generateCentroidsWithRealData(k, data)
+        it("should select the correct number of centroids", () => {
+            const centroids = calculateCentroids(k, data)
 
             expect(centroids.length).toBe(k)
         })
+
+        it("should select the expected centroids given the indexes", () => {
+            const indexes = [0, 3, 4]
+            const k = 3
+
+            const centroids = calculateCentroidsWithIndexes(k, data, indexes)
+
+            expect(centroids).toEqual(
+                [
+                    data[0].votes.map((vote) => vote.voteWeight), 
+                    data[3].votes.map((vote) => vote.voteWeight), 
+                    data[4].votes.map((vote) => vote.voteWeight)
+                ]
+            )
+            expect(centroids[0]).toEqual([0, 3, 0, 0, 0, 0, 0])
+        })
     })
+
+    describe("calculateDistance", () => {
+        const data: UserBallot[] = [
+            {
+                votes: [
+                    {
+                        voteOption: 1,
+                        voteWeight: 3
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 4,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 10
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 0,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 4,
+                        voteWeight: 1
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 4,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 6,
+                        voteWeight: 7
+                    }
+                ]
+            }
+        ]
+
+        const projects = findNumberOfProjects(data)
+
+        addZeroVotesToBallots(data, projects)
+
+        const indexes = [0, 3, 4]
+        const k = 3
+
+        const centroids = calculateCentroidsWithIndexes(k, data, indexes)
+
+        expect(centroids).toEqual(
+            [
+                data[0].votes.map((vote) => vote.voteWeight), 
+                data[3].votes.map((vote) => vote.voteWeight), 
+                data[4].votes.map((vote) => vote.voteWeight)
+            ]
+        )
+        expect(centroids[0]).toEqual([0, 3, 0, 0, 0, 0, 0])
+        expect(centroids[1]).toEqual([0, 10, 0, 0, 5, 0, 0])
+
+        it("should return the correct distance between a user ballot and a centroid", () => {
+            const weights = data[0].votes.map((vote) => vote.voteWeight)
+
+            const distance = calculateDistance(weights, centroids[1], projects)
+
+            // 8.602 calculate by hand
+            expect(distance).toBeCloseTo(8.602, 3)
+        })
+
+    })
+
+    describe("assignVotesToClusters", () => {
+        const data: UserBallot[] = [
+            {
+                votes: [
+                    {
+                        voteOption: 1,
+                        voteWeight: 3
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 4,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 10
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 0,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 4,
+                        voteWeight: 1
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 4,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 6,
+                        voteWeight: 7
+                    }
+                ]
+            }
+        ]
+
+        const projects = findNumberOfProjects(data)
+
+        addZeroVotesToBallots(data, projects)
+
+        const indexes = [0, 3, 4]
+        const k = 3
+
+        const centroids = calculateCentroidsWithIndexes(k, data, indexes)
+
+        expect(centroids).toEqual(
+            [
+                data[0].votes.map((vote) => vote.voteWeight), 
+                data[3].votes.map((vote) => vote.voteWeight), 
+                data[4].votes.map((vote) => vote.voteWeight)
+            ]
+        )
+        expect(centroids[0]).toEqual([0, 3, 0, 0, 0, 0, 0])
+        expect(centroids[1]).toEqual([0, 10, 0, 0, 5, 0, 0])
+        expect(centroids[2]).toEqual([5, 0, 0, 5, 0, 0, 0])
+
+        it("should assign the votes to the correct cluster (1 ballot)", () => {
+            const ballot = data[1]
+
+            expect(ballot.votes.map((vote) => vote.voteWeight)).toEqual([0, 5, 5, 0, 0, 0, 0])
+
+            const assignment = assignVotesToClusters([ballot], centroids)
+
+            const distanceFromCluster0 = calculateDistance(ballot.votes.map((vote) => vote.voteWeight), centroids[0], projects)
+            const distanceFromCluster1 = calculateDistance(ballot.votes.map((vote) => vote.voteWeight), centroids[1], projects)
+            const distanceFromCluster2 = calculateDistance(ballot.votes.map((vote) => vote.voteWeight), centroids[2], projects)
+
+            // calculated by hand
+            expect(distanceFromCluster0).toBeCloseTo(5.385, 3)
+            expect(distanceFromCluster1).toBeCloseTo(8.660, 3)
+            expect(distanceFromCluster2).toBeCloseTo(10, 3)
+
+            // the closest is cluster[0] as 5.385 > 8.660 > 10
+            expect(assignment).toEqual([0])
+        })
+
+        it("should assign the votes to the same cluster (2 ballots with same votes)", () => {
+            const ballots = [data[1], data[6]]
+
+            expect(ballots[0].votes.map((vote) => vote.voteWeight)).toEqual([0, 5, 5, 0, 0, 0, 0])
+            expect(ballots[1].votes.map((vote) => vote.voteWeight)).toEqual([0, 5, 5, 0, 0, 0, 0])
+            expect(ballots[0]).toEqual(ballots[1])
+
+            const assignment = assignVotesToClusters(ballots, centroids)
+
+            const distanceFromCluster0 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[0], projects)
+            const distanceFromCluster1 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[1], projects)
+            const distanceFromCluster2 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[2], projects)
+
+            // calculated by hand
+            expect(distanceFromCluster0).toBeCloseTo(5.385, 3)
+            expect(distanceFromCluster1).toBeCloseTo(8.660, 3)
+            expect(distanceFromCluster2).toBeCloseTo(10, 3)
+
+            // the closest is cluster[0] as 5.385 > 8.660 > 10
+            expect(assignment).toEqual([0, 0])
+        })
+
+        it("should assign the votes to the correct clusters (3 ballots)", () => {
+
+        })
+    })
+
+    describe("updateCentroids", () => {})
+    describe("calculateClustersSize", () => {})
+    describe("calculateCoefficents", () => {})
+    describe("assignVotersCoefficient", () => {})
+    describe("calculateQFPerProject", () => {})
+    describe("checkConvergence", () => {})
 })

@@ -17,7 +17,7 @@ export interface VotersCoefficients {
 export interface KMeansQF {
     voters: number 
     projects: number
-    votes: number[][]
+    votes: UserBallot[]
     k: number
     centroids: number[][]
     clusters: Cluster[]
