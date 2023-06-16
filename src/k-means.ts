@@ -309,7 +309,7 @@ export const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
     for (const clusterSize of clustersSize) {
         coefficents.push({
             clusterIndex: clusterSize.index,
-            coefficent: 1/clusterSize.size
+            coefficient: 1/clusterSize.size
         })
     }
 
@@ -330,7 +330,7 @@ export const assignVotersCoefficient = (assignments: number[], coefficents: Coef
         votersCoefficients.push({
             voterIndex: i,
             clusterIndex: assignments[i],
-            coefficent: coefficents.find(coefficent => coefficent.clusterIndex === assignments[i])?.coefficent || 0
+            coefficent: coefficents.find(coefficent => coefficent.clusterIndex === assignments[i])?.coefficient || 0
         })
     }
 
@@ -369,22 +369,43 @@ export const calculateQFPerProject = (
 
 /**
  * Calculate the QF for each project
- * @param ballots <UserBallot[]> The votes
+ * @param ballots <number[][]> The votes
  * @param projectIndex <number> The project index
  * @returns <number> The QF for the project
  */
 export const calculateTraditionalQF = (
-    ballots: UserBallot[],
+    ballots: number[][],
     projectIndex: number 
 ): number => {
     let sum = 0
     // loop through ballots
-    for (const ballot of ballots) {
+    for (let i = 0; i < ballots.length; i++) {
         // add up to the sum the square root of the vote weight for x project
-        sum += Math.sqrt(ballot.votes[projectIndex].voteWeight)
+        sum += Math.sqrt(ballots[projectIndex][projectIndex])
     }
     // the result should be squared
     return Math.pow(sum, 2)
+}
+
+/**
+ * Calculate all allocations for all projects using
+ * the traditional QF calculation
+ * @param ballots <number[][]> The votes
+ * @param projectsLength <number> The number of projects
+ * @returns <number[]> The QF for each project
+ */
+export const calculateTraditionalQFForAllProjects = (
+    ballots: number[][],
+    projectsLength: number
+): number[] => {
+    const qf: number[] = []
+    // loop through projects
+    for (let i = 0; i < projectsLength; i++) {
+        // calculate the QF for each project
+        qf.push(calculateTraditionalQF(ballots, i))
+    }
+
+    return qf
 }
 
 /**

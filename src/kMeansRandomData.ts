@@ -224,7 +224,7 @@ export const testCalculateCoefficents = (clustersSize: Cluster[]): Coefficent[] 
     for (const clusterSize of clustersSize) {
         const coefficent = {
             clusterIndex: clusterSize.index,
-            coefficent: 1/clusterSize.size
+            coefficient: 1/clusterSize.size
         }
         coefficents.push(coefficent)
     }
@@ -244,7 +244,7 @@ export const testAssignVotersCoefficient = (assignments: number[], coefficents: 
         const voterCoefficient = {
             voterIndex: i,
             clusterIndex: assignments[i],
-            coefficent: coefficents.find(coefficent => coefficent.clusterIndex === assignments[i])?.coefficent || 0
+            coefficent: coefficents.find(coefficent => coefficent.clusterIndex === assignments[i])?.coefficient || 0
         }
         votersCoefficients.push(voterCoefficient)
     }

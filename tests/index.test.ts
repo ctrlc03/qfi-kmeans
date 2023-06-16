@@ -1,7 +1,7 @@
 import { testCalculateCentroids, testCalculateTraditionalQF, testGenerateVector, testGenerateVotes, testKmeanQFWithVotes, testKmeansQF } from "../src/kMeansRandomData"
 import { randomIntegerIncluded } from "../src/utilities"
-import { addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findLargestVoteIndex, findNumberOfProjects, calculateCentroids, calculateCentroidsWithIndexes, calculateDistance, assignVotesToClusters } from "../src/k-means"
-import { UserBallot } from "../src/interfaces";
+import { addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findLargestVoteIndex, findNumberOfProjects, calculateCentroids, calculateCentroidsWithIndexes, calculateDistance, assignVotesToClusters, checkConvergence, calculateCoefficents, calculateClustersSize } from "../src/k-means"
+import { Cluster, UserBallot } from "../src/interfaces";
 
 describe("test k-means with random data", () => {
     describe("testGenerateVector", () => {
@@ -907,14 +907,363 @@ describe("k-means with actual data", () => {
         })
 
         it("should assign the votes to the correct clusters (3 ballots)", () => {
+            const ballots = [data[1], data[3], data[6]]
+
+            expect(ballots[0].votes.map((vote) => vote.voteWeight)).toEqual([0, 5, 5, 0, 0, 0, 0])
+            expect(ballots[1].votes.map((vote) => vote.voteWeight)).toEqual([0, 10, 0, 0, 5, 0, 0])
+            expect(ballots[2].votes.map((vote) => vote.voteWeight)).toEqual([0, 5, 5, 0, 0, 0, 0])
+
+            const assignment = assignVotesToClusters(ballots, centroids)
+
+            const distanceFromCluster0 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[0], projects)
+            const distanceFromCluster1 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[1], projects)
+            const distanceFromCluster2 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[2], projects)
+
+            const distanceFromCluster0Ballot1 = calculateDistance(ballots[1].votes.map((vote) => vote.voteWeight), centroids[0], projects)
+            const distanceFromCluster1Ballot1 = calculateDistance(ballots[1].votes.map((vote) => vote.voteWeight), centroids[1], projects)
+            const distanceFromCluster2Ballot1 = calculateDistance(ballots[1].votes.map((vote) => vote.voteWeight), centroids[2], projects)
+
+            const distanceFromCluster0Ballot2 = calculateDistance(ballots[2].votes.map((vote) => vote.voteWeight), centroids[0], projects)
+            const distanceFromCluster1Ballot2 = calculateDistance(ballots[2].votes.map((vote) => vote.voteWeight), centroids[1], projects)
+            const distanceFromCluster2Ballot2 = calculateDistance(ballots[2].votes.map((vote) => vote.voteWeight), centroids[2], projects)
+
+            expect(distanceFromCluster0).toEqual(distanceFromCluster0Ballot2)
+            expect(distanceFromCluster1).toEqual(distanceFromCluster1Ballot2)
+            expect(distanceFromCluster2).toEqual(distanceFromCluster2Ballot2)
+
+            // calculated by hand distance for ballots[1]
+            expect(distanceFromCluster0Ballot1).toBeCloseTo(8.602, 3)
+            expect(distanceFromCluster1Ballot1).toBeCloseTo(0, 3)
+            // rounded up to 3 decimals -> 13.2287
+            expect(distanceFromCluster2Ballot1).toBeCloseTo(13.229, 3)
+
+            expect(assignment).toEqual([0, 1, 0])
 
         })
     })
 
-    describe("updateCentroids", () => {})
-    describe("calculateClustersSize", () => {})
-    describe("calculateCoefficents", () => {})
-    describe("assignVotersCoefficient", () => {})
-    describe("calculateQFPerProject", () => {})
-    describe("checkConvergence", () => {})
+    describe("updateCentroids", () => {
+        const data: UserBallot[] = [
+            {
+                votes: [
+                    {
+                        voteOption: 1,
+                        voteWeight: 3
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 4,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 10
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 0,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 4,
+                        voteWeight: 1
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 4,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 6,
+                        voteWeight: 7
+                    }
+                ]
+            }
+        ]
+
+        const projects = findNumberOfProjects(data)
+
+        addZeroVotesToBallots(data, projects)
+
+        const indexes = [0, 3, 4]
+        const k = 3
+
+        const centroids = calculateCentroidsWithIndexes(k, data, indexes)
+
+        expect(centroids).toEqual(
+            [
+                data[0].votes.map((vote) => vote.voteWeight), 
+                data[3].votes.map((vote) => vote.voteWeight), 
+                data[4].votes.map((vote) => vote.voteWeight)
+            ]
+        )
+        expect(centroids[0]).toEqual([0, 3, 0, 0, 0, 0, 0])
+        expect(centroids[1]).toEqual([0, 10, 0, 0, 5, 0, 0])
+        expect(centroids[2]).toEqual([5, 0, 0, 5, 0, 0, 0])
+
+        it("should update the centroids correctly", () => {
+
+        })
+    })
+
+    describe("calculateClustersSize", () => {
+        const data: UserBallot[] = [
+            {
+                votes: [
+                    {
+                        voteOption: 1,
+                        voteWeight: 3
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 4,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 10
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 0,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 3,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 4,
+                        voteWeight: 1
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 2,
+                        voteWeight: 5
+                    },
+                    {
+                        voteOption: 1,
+                        voteWeight: 5
+                    }
+                ]
+            },
+            {
+                votes: [
+                    {
+                        voteOption: 3,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 4,
+                        voteWeight: 1
+                    },
+                    {
+                        voteOption: 6,
+                        voteWeight: 7
+                    }
+                ]
+            }
+        ]
+
+        const projects = findNumberOfProjects(data)
+
+        addZeroVotesToBallots(data, projects)
+
+        const indexes = [0, 3, 4]
+        const k = 3
+
+        const centroids = calculateCentroidsWithIndexes(k, data, indexes)
+
+        expect(centroids).toEqual(
+            [
+                data[0].votes.map((vote) => vote.voteWeight), 
+                data[3].votes.map((vote) => vote.voteWeight), 
+                data[4].votes.map((vote) => vote.voteWeight)
+            ]
+        )
+        expect(centroids[0]).toEqual([0, 3, 0, 0, 0, 0, 0])
+        expect(centroids[1]).toEqual([0, 10, 0, 0, 5, 0, 0])
+        expect(centroids[2]).toEqual([5, 0, 0, 5, 0, 0, 0])
+
+        const ballots = [data[1], data[3], data[6]]
+        const assignment = assignVotesToClusters(ballots, centroids)
+
+        it("should return the correct cluster sizes", () => {
+            expect(calculateClustersSize(assignment)).toEqual(
+                [
+                    {
+                        index: 0,
+                        size: 2
+                    },
+                    {
+                        index: 1,
+                        size: 1
+                    }
+                ]
+            )
+        })  
+    })
+
+    describe("calculateCoefficents", () => {
+        const clustersSize: Cluster[] = [{
+            index: 0,
+            size: 2
+        }, {
+            index: 1,
+            size: 3
+        }, {
+            index: 2,
+            size: 10
+        }]
+        it("should return the correct coefficients (1/clusterSize)", () => {
+            expect(calculateCoefficents(clustersSize)).toEqual(
+                [
+                    {
+                        clusterIndex: 0, 
+                        coefficient: 0.5
+                    }, 
+                    {
+                        clusterIndex: 1, 
+                        coefficient: 0.3333333333333333
+                    }, 
+                    {
+                        clusterIndex: 2,
+                        coefficient: 0.1
+                    }
+                ]
+            )
+        })
+        it("should return a coefficient of Infinity (1/0) if the cluster size is 0", () => {
+            expect(calculateCoefficents([{index: 0, size: 0}])).toEqual([{clusterIndex: 0, coefficient: Infinity}])
+        })
+    })
+
+    describe("assignVotersCoefficient", () => {
+        it("should assign the correct coefficients to each voter", () => {
+
+        })
+    })
+
+    describe("calculateQFPerProject", () => {
+        it("should calculate the correct QF for each project", () => {})
+    })
+    
+    describe("checkConvergence", () => {
+        const centroids = [[5, 0, 5], [1, 3, 3]]
+        const newCentroids = [[5, 0, 5], [1, 6, 3]]
+        it("should return false for clusters that have not converged", () => {
+            expect(checkConvergence(centroids, newCentroids, 0)).toEqual(false)
+        })
+        it("should return true for clusters that have converged", () => {
+            expect(checkConvergence(centroids, centroids, 0.001)).toEqual(true)
+        })
+    })
+
+    describe("full example k-means", () => {
+        it("should return the correct data", () => {
+
+        })
+    })
 })

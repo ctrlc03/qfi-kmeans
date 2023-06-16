@@ -5,7 +5,7 @@ export interface Cluster {
 
 export interface Coefficent {
     clusterIndex: number
-    coefficent: number
+    coefficient: number
 }
 
 export interface VotersCoefficients {

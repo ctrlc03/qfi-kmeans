@@ -1,9 +1,9 @@
 import fs from "fs"
-import { findNumberOfProjects, parseVoteData, kmeansQF } from "./k-means"
+import { findNumberOfProjects, parseVoteData, kmeansQF, calculateTraditionalQF, calculateTraditionalQFForAllProjects } from "./k-means"
 import { MAX_ITERATIONS, TOLERANCE } from "./utilities"
 
 const main = () => {
-    const k = 3
+    const k = 5
 
     const data = fs.readFileSync('./tests/usersBallotState.json').toString()
 
@@ -23,6 +23,11 @@ const main = () => {
     console.log("k-means QF allocations", qf.qfs)
     console.log(`We have iterated ${qf.iterations} times until converged with a tolerance of ${TOLERANCE} and MAX_ITERATIONS of ${MAX_ITERATIONS}`)
 
+    const traditionalQF = calculateTraditionalQFForAllProjects(ballots.map((ballot) =>
+    ballot.votes.map((vote) => vote.voteWeight)
+    ), projects)
+
+    console.log("Traditional QF allocations", traditionalQF)
 }
 
 main()
