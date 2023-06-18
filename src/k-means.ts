@@ -12,12 +12,12 @@ export const voteOptionExists = (ballot: UserBallot, voteOption: number): boolea
 }
 
 /**
- * Expand a number to an array of number 0 <= num 
+ * Expand a number to an array of number 1 <= num 
  * @param num <number> The number to expand
  * @returns <number[]> The expanded number
  */
 export const expandNumberToArray = (num: number): number[] => {
-    return Array.from({ length: num + 1 }, (_, index) => index)
+    return Array.from({ length: num }, (_, index) => index+1)
 }
 
 /**
@@ -56,20 +56,6 @@ export const findNumberOfProjects = (ballots: UserBallot[]): number => {
         for (const vote of ballot.votes) {
             if (vote.voteOption > largestVoteIndex) largestVoteIndex = vote.voteOption
         }
-    }
-
-    return largestVoteIndex
-}
-
-/**
- * Find the largest vote index for a user ballot
- * @param ballots <UserBallot[]> The ballots
- * @returns <number> The largest vote index
- */
-export const findLargestVoteIndex = (ballots: UserBallot[]): number => {
-    let largestVoteIndex = 0 
-    for (const ballot of ballots) {
-        if (ballot.votes.length - 1 > largestVoteIndex) largestVoteIndex = ballot.votes.length - 1
     }
 
     return largestVoteIndex
@@ -127,7 +113,10 @@ export const addZeroVotesToBallots = (ballots: UserBallot[], projects: number): 
  * @param ballots <UserBallot[]> The ballots
  * @returns <number[][]> The centroids
  */
-export const calculateCentroids = (k: number, ballots: UserBallot[]): number[][] => {
+export const calculateCentroids = (
+    k: number, 
+    ballots: UserBallot[]
+    ): number[][] => {
     // store the generated centroids
     const centroids: number[][] = []
     // holds the indexes that have already been selected
@@ -165,7 +154,7 @@ export const calculateCentroidsWithIndexes = (
     ): number[][] => {
     // store the generated centroids
     const centroids: number[][] = []
-
+ 
     // loop for k times
     for (let i = 0; i < k; i++) {
         // create a temp random index to pick a ballot
@@ -187,7 +176,15 @@ export const calculateCentroidsWithIndexes = (
  * @param numberOfProjects <number> The number of projects
  * @returns <number> The distance between the two votes
  */
-export const calculateDistance = (votes1: number[], votes2: number[], numberOfProjects: number): number => {
+export const calculateDistance = (
+    votes1: number[], 
+    votes2: number[], 
+    numberOfProjects: number
+    ): number => {
+    // some error handling
+    if (votes1.length !== votes2.length) 
+        throw new Error("The two arrays of votes should have the same length")
+    
     // hold tmp result
     let tmpDistance = 0
     // loop through the projects that we have 
@@ -212,16 +209,28 @@ export const calculateDistance = (votes1: number[], votes2: number[], numberOfPr
  * @returns <number[]> The centeroid to which each array of votes is assigned to
  */
 // @todo optimize this and pass already the weights rather than mapping them again 
-export const assignVotesToClusters = (ballots: UserBallot[], centroids: number[][]): number[] => {
+export const assignVotesToClusters = (
+    ballots: UserBallot[], 
+    centroids: number[][]
+    ): number[] => {
+    // we store the assignments in this array of numbers
     const assignments: number[] = []
     // loop through each vote
+
     for (const ballot of ballots) {
         let minDistance = Infinity
         let clusterIndex = -1
+        const weights = ballot.votes.map(vote => vote.voteWeight)
         // loop through the centroids
         for (let i = 0; i < centroids.length; i++) {
+            // break out early if the two arrays are the same
+            if (JSON.stringify(weights) === JSON.stringify(centroids[i])) {
+                clusterIndex = i
+                break 
+            }
             // calculate the distance between the vote array (for each user) and the centeroids
-            const distance = calculateDistance(ballot.votes.map(vote => vote.voteWeight), centroids[i], ballot.votes.length)
+            const distance = calculateDistance(weights, centroids[i], ballot.votes.length)
+
             // check if we have a new minimum distance 
             if (distance < minDistance) {
                 minDistance = distance
@@ -251,24 +260,27 @@ export const updateCentroids = (
     k: number, 
     projectsLength: number
     ): number[][] => {
-    // store the new centroids (now they are an array of numbers as we only storing the vote weight)
+    // store the new centroids 
+    // (now they are an array of numbers as we only storing the vote weight)
     const newCentroids: number[][] = []
     // loop through the clusters
     for (let i = 0; i < k; i++) {
         // get the votes assigned to the cluster
         const assignedVotes = votes.filter((_, index) => assignments[index] === i)
 
-        // store tmp sums 
-        const tmpSum: number[] = []
+        // store tmp mean 
+        const tmpMean: number[] = []
         // loop through the projects
         for (let i = 0; i < projectsLength; i++) {
-            // calculate the sum of the votes for each project
-            const sum = assignedVotes.reduce((sum, vote) => sum + vote[i], 0) / assignedVotes.length
+            // calculate the mean of the votes for each project
+            const mean = assignedVotes.reduce(
+                (sum, vote) => sum + vote[i], 0
+                ) / assignedVotes.length
             // store it in the tmp sum array 
-            tmpSum.push(sum)
+            tmpMean.push(mean)
         }
         // store it in the new centroids array 
-        newCentroids.push(tmpSum)
+        newCentroids.push(tmpMean)
     }
 
     return newCentroids
@@ -285,7 +297,8 @@ export const calculateClustersSize = (assignments: number[]): Cluster[] => {
     for (const assignment of assignments) {
         const cluster = clustersSize.find(cluster => cluster.index === assignment)
         // if there is no match, it means that there is no cluster with this index
-        // and create a cluster of size one and push it to the array
+        // in our array of clusters size thus we
+        // create a cluster of size one and push it to the array
         if (!cluster) clustersSize.push({ index: assignment, size: 1 })
         else {
             // otherwise we get the index of the cluster and increment its size by 1
@@ -306,13 +319,13 @@ export const calculateClustersSize = (assignments: number[]): Cluster[] => {
 export const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
     const coefficents: Coefficent[] = []
     // loop through all the clusters
-    for (const clusterSize of clustersSize) {
+    for (const clusterSize of clustersSize) 
+        // store the cluster index and the coefficient (1/cluster size)
         coefficents.push({
             clusterIndex: clusterSize.index,
             coefficient: 1/clusterSize.size
         })
-    }
-
+    
     return coefficents
 }
 
@@ -325,7 +338,7 @@ export const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
 export const assignVotersCoefficient = (assignments: number[], coefficents: Coefficent[]): VotersCoefficients[] => {
     const votersCoefficients: VotersCoefficients[] = []
     // loop through all assignments
-    for (let i=0; i < assignments.length; i++) {
+    for (let i = 0; i < assignments.length; i++) {
         // create and store a new object with the voter index, cluster index and coefficient
         votersCoefficients.push({
             voterIndex: i,
@@ -377,6 +390,7 @@ export const calculateTraditionalQF = (
     ballots: number[][],
     projectIndex: number 
 ): number => {
+    // =SUM([vote1User1,vote1User2,vote1User3]**0.5)**2
     let sum = 0
     // loop through ballots
     for (let i = 0; i < ballots.length; i++) {
@@ -469,15 +483,17 @@ export const kmeansQF = (
 
     // loop per max iterations
     for (let i = 0; i < iterations; i++) {
+        actualIterations += 1
         // assign each vote to a cluster
         assignments = assignVotesToClusters(ballots, centroids)
         // update centroids 
         const newCentroids = updateCentroids(ballots.map((ballot) =>
             ballot.votes.map((vote) => vote.voteWeight)
         ), assignments, k, projects)
+
         // check if the centroids have converged
         if (checkConvergence(centroids, newCentroids, tolerance)) {
-            actualIterations = i
+            actualIterations = i+1
             break 
         }
         // if not, update the centroids variable and continue looping until max interations

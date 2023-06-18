@@ -10,7 +10,7 @@ const main = () => {
     const ballots = parseVoteData(data)
     const projects = findNumberOfProjects(ballots)
 
-    const qf = kmeansQF(ballots, ballots.length, projects, k, TOLERANCE, MAX_ITERATIONS)
+    const qf = kmeansQF(ballots, ballots.length, projects, k, MAX_ITERATIONS, TOLERANCE)
 
     console.log("Voters", qf.voters)
     console.log("Projects", qf.projects)
