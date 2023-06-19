@@ -492,10 +492,8 @@ export const kmeansQF = (
         ), assignments, k, projects)
 
         // check if the centroids have converged
-        if (checkConvergence(centroids, newCentroids, tolerance)) {
-            actualIterations = i+1
-            break 
-        }
+        if (checkConvergence(centroids, newCentroids, tolerance)) break 
+        
         // if not, update the centroids variable and continue looping until max interations
         centroids = newCentroids
     }

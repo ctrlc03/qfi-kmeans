@@ -1,7 +1,7 @@
-import { testCalculateCentroids, testCalculateTraditionalQF, testGenerateVector, testGenerateVotes, testKmeanQFWithVotes, testKmeansQF } from "../src/kMeansRandomData"
-import { TOLERANCE, randomIntegerIncluded } from "../src/utilities"
-import { addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findNumberOfProjects, calculateCentroids, calculateCentroidsWithIndexes, calculateDistance, assignVotesToClusters, checkConvergence, calculateCoefficents, calculateClustersSize, updateCentroids } from "../src/k-means"
-import { Cluster, UserBallot } from "../src/interfaces";
+import { testCalculateCentroids, testCalculateTraditionalQF, testGenerateVector, testGenerateVotes, testKmeanQFWithVotes, testKmeansQF } from "../src/ts/kMeansRandomData"
+import { MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded } from "../src/ts/utilities"
+import { addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findNumberOfProjects, calculateCentroids, calculateCentroidsWithIndexes, calculateDistance, assignVotesToClusters, checkConvergence, calculateCoefficents, calculateClustersSize, updateCentroids, assignVotersCoefficient, calculateQFPerProject } from "../src/ts/k-means"
+import { Cluster, UserBallot } from "../src/ts/interfaces";
 
 describe("test k-means with random data", () => {
     describe("testGenerateVector", () => {
@@ -214,7 +214,6 @@ describe("test k-means with random data", () => {
 })
 
 describe("k-means with actual data", () => {
-
     const data: UserBallot[] = [
         {
             votes: [
@@ -1510,31 +1509,63 @@ describe("k-means with actual data", () => {
             )
 
             const updatedCentroids = updateCentroids(votes, assignments, k, projects)
-
             const convergence = checkConvergence(centroids, updatedCentroids, TOLERANCE)
 
             expect(convergence).toBe(false)
         })
 
-        // @todo assignments might not change after updating the centroids
-        it.skip("should change the assignments after updating the centroids", () => {
+        it("should count the qf allocation using k-means coefficients", () => {
             const centroids = calculateCentroidsWithIndexes(k, ballots, indexes)
-            const assignments = assignVotesToClusters(ballots, centroids)
             const votes = ballots.map((ballot) =>
                 ballot.votes.map((vote) => vote.voteWeight)
             )
 
+            let assignments: number[] = []
+
             expect(ballots.length).toBe(votes.length)
-            const updatedCentroids = updateCentroids(votes, assignments, k, projects)
+            let iterations = 0
+            for (let i = 0; i < MAX_ITERATIONS; i++) {
+                iterations++
+                assignments = assignVotesToClusters(ballots, centroids)
+                const newCentroids = updateCentroids(votes, assignments, k, projects)
 
-            const convergence = checkConvergence(centroids, updatedCentroids, TOLERANCE)
-            expect(convergence).toBe(false)
+                if (checkConvergence(centroids, newCentroids, TOLERANCE)) break
+            }
+                           
+            expect(iterations).toBeGreaterThan(1)
+            const sizes = calculateClustersSize(assignments)
+            const coefficients = calculateCoefficents(sizes)
+            const userCoefficients = assignVotersCoefficient(assignments, coefficients)
 
-            expect(updatedCentroids.length).toBe(centroids.length)
+            for (const coefficient of coefficients) {
+                expect(coefficient.coefficient).toBeGreaterThanOrEqual(0)
+                expect(coefficient.coefficient).toBeLessThanOrEqual(1)
+            }
 
-            const newAssignments = assignVotesToClusters(ballots, updatedCentroids)
+            // calculate qf
+            const qfs: number[] = []
+            for (let i = 0; i < projects; i++) qfs.push(calculateQFPerProject(userCoefficients, ballots, i))
+            
+            expect(qfs.length).toBe(projects)
 
-            expect(assignments).not.toEqual(newAssignments)
+            // check that the projects with 0 votes have 0 qf
+            const zeroProjects: number[] = []
+            for (let i = 0; i < projects; i++) {
+                let sum = 0
+                for (const ballot of ballots) {
+                    if (ballot.votes[i].voteWeight > 0) sum += ballot.votes[i].voteWeight
+                }
+                if (sum === 0) zeroProjects.push(i)
+            }
+
+            for (const zeroProject of zeroProjects) {
+                expect(qfs[zeroProject]).toBe(0)
+            }
+
+            // check that the projects with votes have a qf greater than 0
+            for (let i = 0; i < projects; i++) {
+                if (!zeroProjects.includes(i)) expect(qfs[i]).toBeGreaterThan(0)
+            }
         })
     })
 })
