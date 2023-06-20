@@ -11,9 +11,9 @@ This repo contains experimental code that is used to understand how the popular 
 * install the dependencies:  
     `yarn`
 * run tests for the typescript implementation:  
-    `yarn test`
+    `yarn test:ts`
 * run tests for the circom implementation:
-    `yarn test`
+    `yarn test:circom`
 * run the code to look at the results  
     `yarn start`
 
