@@ -12,5 +12,7 @@ jobs:
       - name: Install deps
         run: |
           yarn install
-      - name: Test
-        run: yarn test
+      - name: Test Typescript implementations
+        run: yarn test:ts
+      - name: Test Circom circuits
+        run: yarn test:circom
