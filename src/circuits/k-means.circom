@@ -12,7 +12,6 @@ template Kmeans(k, projects) {
     assert(projects > k);
 
     // the centroids of each cluster
-    // centroids = [[0,1,2], [4,3,5]]
     signal input centroids[k][projects];
     // the user's vote ballot
     signal input ballot[projects];
@@ -37,7 +36,6 @@ template Kmeans(k, projects) {
         calculateDistance[i].vectors[1] <-- centroids[i];
         // if the calculated distance is less than the previous distance, 
         // then store the index and the distance
-
         if (calculateDistance[i].sumOfSquaredDistances < previousDistance) {
             previousDistance = calculateDistance[i].sumOfSquaredDistances;
             index = i;

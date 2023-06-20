@@ -12,7 +12,6 @@ template KmeansManhattan(k, projects) {
     assert(projects > k);
 
     // the centroids of each cluster
-    // centroids = [[0,1,2], [4,3,5]]
     signal input centroids[k][projects];
     // the user's vote ballot
     signal input ballot[projects];
@@ -38,7 +37,6 @@ template KmeansManhattan(k, projects) {
         // if the calculated distance is less than the previous distance, 
         // then store the index and the distance
         if (calculateDistance[i].sumOfDistances < previousDistance) {
-            // log("calculateDistance[i].sumOfSquaredDistances < previousDistance");
             previousDistance = calculateDistance[i].sumOfDistances;
             index = i;
         }
