@@ -1,5 +1,5 @@
-import { Cluster, Coefficent, KMeansQF, UserBallot, Vote, VotersCoefficients } from "./interfaces"
-import { MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded } from "./utilities"
+import { Cluster, Coefficent, KMeansQF, UserBallot, Vote, VotersCoefficients } from "./interfaces.js"
+import { MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded } from "./utilities.js"
 
 /**
  * Check if a voteOption already exists in a UserBallot

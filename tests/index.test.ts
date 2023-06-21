@@ -1,7 +1,16 @@
-import { testCalculateCentroids, testCalculateTraditionalQF, testGenerateVector, testGenerateVotes, testKmeanQFWithVotes, testKmeansQF } from "../src/ts/kMeansRandomData"
-import { MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded } from "../src/ts/utilities"
-import { addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findNumberOfProjects, calculateCentroids, calculateCentroidsWithIndexes, calculateDistance, assignVotesToClusters, checkConvergence, calculateCoefficents, calculateClustersSize, updateCentroids, assignVotersCoefficient, calculateQFPerProject } from "../src/ts/k-means"
-import { Cluster, UserBallot } from "../src/ts/interfaces";
+import {
+    testCalculateCentroids,
+    testCalculateTraditionalQF,
+    testGenerateVector,
+    testGenerateVotes,
+    testKmeanQFWithVotes,
+    testKmeansQF,
+    MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded,
+    addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findNumberOfProjects,
+    calculateCentroids, calculateCentroidsWithIndexes, calculateDistance, assignVotesToClusters, checkConvergence,
+    calculateCoefficents, calculateClustersSize, updateCentroids, assignVotersCoefficient, calculateQFPerProject,
+    Cluster, UserBallot
+} from "../src/ts/index"
 
 describe("test k-means with random data", () => {
     describe("testGenerateVector", () => {
@@ -10,7 +19,7 @@ describe("test k-means with random data", () => {
             const indexes = [0, 4, 5, 6, 7, 8]
             const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
-    
+
             expect(vector[0]).toBeGreaterThan(0)
             expect(vector[1]).toBe(0)
             expect(vector[2]).toBe(0)
@@ -25,7 +34,7 @@ describe("test k-means with random data", () => {
             const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
             const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
-    
+
             expect(vector[0]).toBeGreaterThan(0)
             expect(vector[1]).toBeGreaterThan(0)
             expect(vector[2]).toBeGreaterThan(0)
@@ -41,7 +50,7 @@ describe("test k-means with random data", () => {
             const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8]
             const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
-    
+
             expect(vector[0]).toBeGreaterThan(0)
             expect(vector[1]).toBeGreaterThan(0)
             expect(vector[2]).toBeGreaterThan(0)
@@ -57,7 +66,7 @@ describe("test k-means with random data", () => {
             const indexes = [0, 1, 2, 3, 4, 5, 6, 7]
             const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
-    
+
             expect(vector[0]).toBeGreaterThan(0)
             expect(vector[1]).toBeGreaterThan(0)
             expect(vector[2]).toBeGreaterThan(0)
@@ -73,7 +82,7 @@ describe("test k-means with random data", () => {
             const indexes = [0, 1, 2, 3, 4, 5, 6]
             const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
-    
+
             expect(vector[0]).toBeGreaterThan(0)
             expect(vector[1]).toBeGreaterThan(0)
             expect(vector[2]).toBeGreaterThan(0)
@@ -89,7 +98,7 @@ describe("test k-means with random data", () => {
             const indexes = [0, 1, 2, 3, 4, 5]
             const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
-    
+
             expect(vector[0]).toBeGreaterThan(0)
             expect(vector[1]).toBeGreaterThan(0)
             expect(vector[2]).toBeGreaterThan(0)
@@ -105,7 +114,7 @@ describe("test k-means with random data", () => {
             const indexes = [3, 4, 5, 6]
             const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
-        
+
             expect(vector[0]).toBe(0)
             expect(vector[1]).toBe(0)
             expect(vector[2]).toBe(0)
@@ -121,7 +130,7 @@ describe("test k-means with random data", () => {
             const indexes = [2, 3, 7, 8, 9]
             const vector = testGenerateVector(indexes, projects)
             expect(vector.length).toBe(projects)
-    
+
             expect(vector[0]).toBe(0)
             expect(vector[1]).toBe(0)
             expect(vector[2]).toBeGreaterThan(0)
@@ -150,9 +159,9 @@ describe("test k-means with random data", () => {
 
     describe("randomIntegerIncluded", () => {
         it("should generate a number between x and y", () => {
-            const x = 0 
+            const x = 0
             const y = 10
-            for (let i=0; i < 1000; i++) {
+            for (let i = 0; i < 1000; i++) {
                 const random = randomIntegerIncluded(x, y)
                 expect(random).toBeGreaterThanOrEqual(x)
                 expect(random).toBeLessThanOrEqual(y)
@@ -166,13 +175,13 @@ describe("test k-means with random data", () => {
             const voters = 100
             const k = 5
             const kMeans = testKmeansQF(projects, voters, k)
-            for (let i = 0; i < projects; i ++) {
+            for (let i = 0; i < projects; i++) {
                 expect(
                     kMeans.qfs[i])
                     .toBeLessThanOrEqual(
                         testCalculateTraditionalQF(kMeans.votes, i
+                        )
                     )
-                )
             }
         })
 
@@ -188,7 +197,7 @@ describe("test k-means with random data", () => {
             const kMeans2 = testKmeanQFWithVotes(votes, voters, projects, k2)
             const kMeans3 = testKmeanQFWithVotes(votes, voters, projects, k3)
 
-            for (let i = 0; i < projects; i ++) {
+            for (let i = 0; i < projects; i++) {
                 expect(kMeans1.qfs[i]).toBeLessThan(kMeans2.qfs[i])
                 expect(kMeans2.qfs[i]).toBeLessThan(kMeans3.qfs[i])
             }
@@ -199,7 +208,7 @@ describe("test k-means with random data", () => {
         //     const projects = 10
         //     const voters = 100
         //     const k = 5
-         
+
         //     const votes = generateVotes(voters, projects)
         //     const kMeans1 = kmeanQFWithVotes(votes, voters, projects, k, 100)
         //     const kMeans2 = kmeanQFWithVotes(votes, voters, projects, k, 200)
@@ -316,20 +325,20 @@ describe("k-means with actual data", () => {
     describe("findNumberOfProjects", () => {
         const jsonData = JSON.stringify([
             {
-              "0": {
-                "voteOption": "1",
-                "voteWeight": "3"
-              }
+                "0": {
+                    "voteOption": "1",
+                    "voteWeight": "3"
+                }
             },
             {
-              "0": {
-                "voteOption": "2",
-                "voteWeight": "5"
-              },
-              "1": {
-                "voteOption": "1",
-                "voteWeight": "5"
-              }
+                "0": {
+                    "voteOption": "2",
+                    "voteWeight": "5"
+                },
+                "1": {
+                    "voteOption": "1",
+                    "voteWeight": "5"
+                }
             }
         ])
         it("should find the number of projects", () => {
@@ -342,20 +351,20 @@ describe("k-means with actual data", () => {
     describe("parseVoteData", () => {
         const data = JSON.stringify([
             {
-              "0": {
-                "voteOption": "1",
-                "voteWeight": "5"
-              }
+                "0": {
+                    "voteOption": "1",
+                    "voteWeight": "5"
+                }
             },
             {
-              "0": {
-                "voteOption": "2",
-                "voteWeight": "5"
-              },
-              "1": {
-                "voteOption": "1",
-                "voteWeight": "5"
-              }
+                "0": {
+                    "voteOption": "2",
+                    "voteWeight": "5"
+                },
+                "1": {
+                    "voteOption": "1",
+                    "voteWeight": "5"
+                }
             }
         ])
         it("should correctly parse the data", () => {
@@ -600,8 +609,8 @@ describe("k-means with actual data", () => {
 
             expect(centroids).toEqual(
                 [
-                    data[0].votes.map((vote) => vote.voteWeight), 
-                    data[3].votes.map((vote) => vote.voteWeight), 
+                    data[0].votes.map((vote) => vote.voteWeight),
+                    data[3].votes.map((vote) => vote.voteWeight),
                     data[4].votes.map((vote) => vote.voteWeight)
                 ]
             )
@@ -620,8 +629,8 @@ describe("k-means with actual data", () => {
 
         expect(centroids).toEqual(
             [
-                data[0].votes.map((vote) => vote.voteWeight), 
-                data[3].votes.map((vote) => vote.voteWeight), 
+                data[0].votes.map((vote) => vote.voteWeight),
+                data[3].votes.map((vote) => vote.voteWeight),
                 data[4].votes.map((vote) => vote.voteWeight)
             ]
         )
@@ -751,8 +760,8 @@ describe("k-means with actual data", () => {
 
         expect(centroids).toEqual(
             [
-                data[0].votes.map((vote) => vote.voteWeight), 
-                data[3].votes.map((vote) => vote.voteWeight), 
+                data[0].votes.map((vote) => vote.voteWeight),
+                data[3].votes.map((vote) => vote.voteWeight),
                 data[4].votes.map((vote) => vote.voteWeight)
             ]
         )
@@ -814,7 +823,7 @@ describe("k-means with actual data", () => {
         })
 
         it("should assign the votes to the correct clusters (3 ballots)", () => {
-            const ballots = [data[1], data[3], data[6]]            
+            const ballots = [data[1], data[3], data[6]]
 
             expect(ballots[0].votes.map((vote) => vote.voteWeight)).toEqual([5, 5, 0, 0, 0, 0])
             expect(ballots[1].votes.map((vote) => vote.voteWeight)).toEqual([10, 0, 0, 5, 0, 0])
@@ -973,8 +982,8 @@ describe("k-means with actual data", () => {
 
         expect(centroids).toEqual(
             [
-                data[0].votes.map((vote) => vote.voteWeight), 
-                data[3].votes.map((vote) => vote.voteWeight), 
+                data[0].votes.map((vote) => vote.voteWeight),
+                data[3].votes.map((vote) => vote.voteWeight),
                 data[4].votes.map((vote) => vote.voteWeight)
             ]
         )
@@ -1098,8 +1107,8 @@ describe("k-means with actual data", () => {
 
         expect(centroids).toEqual(
             [
-                data[0].votes.map((vote) => vote.voteWeight), 
-                data[3].votes.map((vote) => vote.voteWeight), 
+                data[0].votes.map((vote) => vote.voteWeight),
+                data[3].votes.map((vote) => vote.voteWeight),
                 data[4].votes.map((vote) => vote.voteWeight)
             ]
         )
@@ -1123,7 +1132,7 @@ describe("k-means with actual data", () => {
                     }
                 ]
             )
-        })  
+        })
     })
 
     describe("calculateCoefficents", () => {
@@ -1141,13 +1150,13 @@ describe("k-means with actual data", () => {
             expect(calculateCoefficents(clustersSize)).toEqual(
                 [
                     {
-                        clusterIndex: 0, 
+                        clusterIndex: 0,
                         coefficient: 0.5
-                    }, 
+                    },
                     {
-                        clusterIndex: 1, 
+                        clusterIndex: 1,
                         coefficient: 0.3333333333333333
-                    }, 
+                    },
                     {
                         clusterIndex: 2,
                         coefficient: 0.1
@@ -1156,14 +1165,14 @@ describe("k-means with actual data", () => {
             )
         })
         it("should return a coefficient of Infinity (1/0) if the cluster size is 0", () => {
-            expect(calculateCoefficents([{index: 0, size: 0}])).toEqual([{clusterIndex: 0, coefficient: Infinity}])
+            expect(calculateCoefficents([{ index: 0, size: 0 }])).toEqual([{ clusterIndex: 0, coefficient: Infinity }])
         })
     })
 
     describe("assignVotersCoefficient", () => {
         it("should assign the correct coefficients to each voter", () => {
             const k = 3
-            const centroids = calculateCentroidsWithIndexes(k, data, [0, 2 , 1])
+            const centroids = calculateCentroidsWithIndexes(k, data, [0, 2, 1])
 
             expect(centroids).toEqual([
                 [3, 0, 0, 0, 0, 0],
@@ -1211,7 +1220,7 @@ describe("k-means with actual data", () => {
     })
 
     describe("calculateQFPerProject", () => {
-        it("should calculate the correct QF for each project", () => {})
+        it("should calculate the correct QF for each project", () => { })
     })
 
     describe("checkConvergence", () => {
@@ -1422,7 +1431,7 @@ describe("k-means with actual data", () => {
 
         const k = 3
         const indexes = [2, 5, 9]
-        
+
         it("should calculate the correct centroids", () => {
             const centroids = calculateCentroidsWithIndexes(k, ballots, indexes)
             expect(centroids).toEqual([
@@ -1483,7 +1492,7 @@ describe("k-means with actual data", () => {
 
             // (hand example index - 1)  [3, 3, 1, 1, 1, 2, 2, 2, 3, 3, 2, 3, 3, 2, 1] 
             // [2, 2, 0, 0, 0, 1, 1, 1, 2, 2, 1, 2, 2, 1, 0]
-        
+
             const assignementsExpected = [2, 2, 0, 0, 0, 1, 1, 1, 2, 2, 1, 2, 2, 1, 0]
 
             expect(assignments).toEqual(assignementsExpected)
@@ -1531,7 +1540,7 @@ describe("k-means with actual data", () => {
 
                 if (checkConvergence(centroids, newCentroids, TOLERANCE)) break
             }
-                           
+
             expect(iterations).toBeGreaterThan(1)
             const sizes = calculateClustersSize(assignments)
             const coefficients = calculateCoefficents(sizes)
@@ -1545,7 +1554,7 @@ describe("k-means with actual data", () => {
             // calculate qf
             const qfs: number[] = []
             for (let i = 0; i < projects; i++) qfs.push(calculateQFPerProject(userCoefficients, ballots, i))
-            
+
             expect(qfs.length).toBe(projects)
 
             // check that the projects with 0 votes have 0 qf

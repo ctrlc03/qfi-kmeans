@@ -1,24 +1,33 @@
 {
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "declarationDir": "dist",
+    "typeRoots": [
+      "node_modules/@types",
+      "src/types"
+    ],
+    "baseUrl": ".",
+    "strict": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "preserveConstEnums": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "ts-node": {
     "compilerOptions": {
       "target": "ESNext",
-      "lib": [
-        "esnext"
-      ],
-      "allowJs": true,
-      "skipLibCheck": true,
-      "esModuleInterop": true,
-      "allowSyntheticDefaultImports": true,
-      "strict": true,
-      "forceConsistentCasingInFileNames": true,
-      "noFallthroughCasesInSwitch": true,
-      "module": "esnext",
-      "moduleResolution": "node16",
-      "resolveJsonModule": true,
-      "isolatedModules": true,
-      "noEmit": true,
-      "experimentalDecorators": true
-    },
-    "include": [
-      "src/types/circom_tester.d.ts"
-    ]
-  }
+      "module": "ESNext"
+    }
+  },
+  "include": [
+    "src",
+    "tests"
+  ]
+}

@@ -1,33 +1,55 @@
-import fs from "fs"
-import { findNumberOfProjects, parseVoteData, kmeansQF, calculateTraditionalQF, calculateTraditionalQFForAllProjects } from "./k-means"
-import { MAX_ITERATIONS, TOLERANCE } from "./utilities"
+export {
+    Cluster,
+    Coefficent,
+    VotersCoefficients,
+    KMeansQF,
+    Vote,
+    UserBallot
+} from "./interfaces.js"
 
-const main = () => {
-    const k = 5
+export {
+    randomIntegerIncluded,
+    MAX_CONTRIBUTION_AMOUNT,
+    MAX_ITERATIONS,
+    TOLERANCE
+} from "./utilities.js"
 
-    const data = fs.readFileSync('./tests/usersBallotState.json').toString()
+export {
+    voteOptionExists,
+    expandNumberToArray,
+    extractZeroVotes,
+    findNumberOfProjects,
+    parseVoteData,
+    addZeroVotesToBallots,
+    calculateCentroids,
+    calculateCentroidsWithIndexes,
+    calculateClustersSize,
+    calculateCoefficents,
+    calculateDistance,
+    calculateQFPerProject,
+    calculateTraditionalQF,
+    calculateTraditionalQFForAllProjects,
+    checkConvergence,
+    updateCentroids,
+    assignVotersCoefficient,
+    assignVotesToClusters,
+    kmeansQF
+} from "./k-means.js"
 
-    const ballots = parseVoteData(data)
-    const projects = findNumberOfProjects(ballots)
-
-    const qf = kmeansQF(ballots, ballots.length, projects, k, MAX_ITERATIONS, TOLERANCE)
-
-    console.log("Voters", qf.voters)
-    console.log("Projects", qf.projects)
-    console.log("K", qf.k)
-    console.log("Centroids", qf.centroids)
-    console.log("Clusters size", qf.clusters)
-    console.log("Assignments", qf.assignmnets)
-    console.log("Coefficients", qf.coefficients)
-    console.log("Voters Coefficients", qf.votersCoefficients)
-    console.log("k-means QF allocations", qf.qfs)
-    console.log(`We have iterated ${qf.iterations} times until converged with a tolerance of ${TOLERANCE} and MAX_ITERATIONS of ${MAX_ITERATIONS}`)
-
-    const traditionalQF = calculateTraditionalQFForAllProjects(ballots.map((ballot) =>
-    ballot.votes.map((vote) => vote.voteWeight)
-    ), projects)
-
-    console.log("Traditional QF allocations", traditionalQF)
-}
-
-main()
+export {
+    testKmeanQFWithVotes,
+    testAssignVotersCoefficient,
+    testAssignVotesToClusters,
+    testCalculateCentroids,
+    testCalculateClustersSize,
+    testCalculateCoefficents,
+    testCalculateDistance,
+    testCalculateTraditionalQF,
+    testCheckConvergence,
+    testGenerateIndexes,
+    testGenerateVector,
+    testGenerateVotes,
+    testKmeansQF,
+    testRunQFWithVotesMultipleTimes,
+    testUpdateCentroids
+} from "./kMeansRandomData.js"
