@@ -1,5 +1,5 @@
-import { Cluster, Coefficent, VotersCoefficients } from "./interfaces"
-import { MAX_CONTRIBUTION_AMOUNT, MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded } from "./utilities"
+import { Cluster, Coefficent, VotersCoefficients } from "./interfaces.js"
+import { MAX_CONTRIBUTION_AMOUNT, MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded } from "./utilities.js"
 
 interface KMeansQF {
     voters: number 
