@@ -596,7 +596,7 @@ describe("k-means with actual data", () => {
         const k = 5
 
         it("should select the correct number of centroids", () => {
-            const centroids = calculateCentroids(k, data)
+            const { centroids } = calculateCentroids(k, data)
 
             expect(centroids.length).toBe(k)
         })

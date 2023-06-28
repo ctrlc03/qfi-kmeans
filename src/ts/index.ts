@@ -33,7 +33,9 @@ export {
     updateCentroids,
     assignVotersCoefficient,
     assignVotesToClusters,
-    kmeansQF
+    kmeansQF,
+    kmeansQFFixedIndexes,
+    outputToJSON
 } from "./k-means.js"
 
 export {

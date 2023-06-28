@@ -23,9 +23,10 @@ export interface KMeansQF {
     clusters: Cluster[]
     coefficients: Coefficent[]
     votersCoefficients: VotersCoefficients[]
-    assignmnets: number[]
+    assignments: number[]
     qfs: number[]
-    iterations: number 
+    iterations: number
+    initialCentroids: number[]
 }
 
 

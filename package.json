@@ -6,7 +6,8 @@
   "main": "src/main.ts",
   "scripts": {
     "build": "tsc",
-    "start": "ts-node --esm src/main.ts",
+    "start:random": "ts-node --esm src/main_random_indexes.ts",
+    "start:indexes": "ts-node --esm src/main_indexes.ts",
     "test:ts": "jest tests/index.test.ts",
     "test:circom": "jest tests/circuit.test.ts"
   },
