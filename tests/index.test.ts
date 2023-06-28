@@ -1120,7 +1120,7 @@ describe("k-means with actual data", () => {
         const assignment = assignVotesToClusters(ballots, centroids)
 
         it("should return the correct cluster sizes", () => {
-            expect(calculateClustersSize(assignment)).toEqual(
+            expect(calculateClustersSize(assignment, projects)).toEqual(
                 [
                     {
                         index: 0,
@@ -1129,6 +1129,22 @@ describe("k-means with actual data", () => {
                     {
                         index: 1,
                         size: 1
+                    },
+                    {
+                        index: 2,
+                        size: 0
+                    },
+                    {
+                        index: 3,
+                        size: 0
+                    },
+                    {
+                        index: 4,
+                        size: 0
+                    },
+                    {
+                        index: 5,
+                        size: 0
                     }
                 ]
             )
@@ -1164,8 +1180,8 @@ describe("k-means with actual data", () => {
                 ]
             )
         })
-        it("should return a coefficient of Infinity (1/0) if the cluster size is 0", () => {
-            expect(calculateCoefficents([{ index: 0, size: 0 }])).toEqual([{ clusterIndex: 0, coefficient: Infinity }])
+        it("should return a coefficient of 1 if the cluster size is 0", () => {
+            expect(calculateCoefficents([{ index: 0, size: 0 }])).toEqual([{ clusterIndex: 0, coefficient: 1 }])
         })
     })
 
@@ -1542,11 +1558,12 @@ describe("k-means with actual data", () => {
             }
 
             expect(iterations).toBeGreaterThan(1)
-            const sizes = calculateClustersSize(assignments)
+            const sizes = calculateClustersSize(assignments, projects)
             const coefficients = calculateCoefficents(sizes)
             const userCoefficients = assignVotersCoefficient(assignments, coefficients)
 
             for (const coefficient of coefficients) {
+                console.log("COEFF", coefficient)
                 expect(coefficient.coefficient).toBeGreaterThanOrEqual(0)
                 expect(coefficient.coefficient).toBeLessThanOrEqual(1)
             }

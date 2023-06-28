@@ -286,29 +286,25 @@ export const updateCentroids = (
         // store it in the new centroids array 
         newCentroids.push(tmpMean)
     }
-
+    
     return newCentroids
 }
 
 /**
  * Calculate how many votes are assigned to each cluster
  * @param assignments <number[]> The assignments
+ * @param projects <number> The number of projects
  * @returns <Cluster[]> The size of each cluster
  */
-export const calculateClustersSize = (assignments: number[]): Cluster[] => {
-    const clustersSize: Cluster[] = []
+export const calculateClustersSize = (assignments: number[], projects: number): Cluster[] => {
+    // initialize an empty array
+    const clustersSize: Cluster[] = Array.from({length: projects}, (_, i) => ({ index: i, size: 0 }));
+
     // loop through the assignments
     for (const assignment of assignments) {
-        const cluster = clustersSize.find(cluster => cluster.index === assignment)
-        // if there is no match, it means that there is no cluster with this index
-        // in our array of clusters size thus we
-        // create a cluster of size one and push it to the array
-        if (!cluster) clustersSize.push({ index: assignment, size: 1 })
-        else {
-            // otherwise we get the index of the cluster and increment its size by 1
-            const index = clustersSize.indexOf(cluster)
-            clustersSize[index].size += 1
-        }  
+        // There's no need to check if the cluster exists, 
+        // because we initialized all of them.
+        clustersSize[assignment].size += 1;
     }
 
     return clustersSize
@@ -327,7 +323,9 @@ export const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
         // store the cluster index and the coefficient (1/cluster size)
         coefficents.push({
             clusterIndex: clusterSize.index,
-            coefficient: 1/clusterSize.size
+            // if the size is zero then the coefficient is 1 (or zero)
+            // this means no users will have this coefficient
+            coefficient: clusterSize.size !== 0 ?  1/clusterSize.size : 1
         })
     
     return coefficents
@@ -505,7 +503,7 @@ export const kmeansQF = (
     }
 
     // now calculate the clusters size 
-    const sizes = calculateClustersSize(assignments)
+    const sizes = calculateClustersSize(assignments, projects)
 
     // calculate the coefficents
     const coefficents = calculateCoefficents(sizes)
@@ -586,7 +584,7 @@ export const kmeansQFFixedIndexes = (
     }
 
     // now calculate the clusters size 
-    const sizes = calculateClustersSize(assignments)
+    const sizes = calculateClustersSize(assignments, projects)
 
     // calculate the coefficents
     const coefficents = calculateCoefficents(sizes)
