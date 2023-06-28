@@ -30,11 +30,11 @@ To run everything, you can just run:
 * `make all` 
 
 You can also run the above using make:
-    * `make install`
-    * `make build`
-    * `make test_ts`
-    * `make test_circom`
-    * `make plot`
+* `make install` 
+* `make build` 
+* `make test_ts` 
+* `make test_circom` 
+* `make plot` 
 
 ## Considerations
 
