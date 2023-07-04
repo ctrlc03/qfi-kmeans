@@ -114,6 +114,7 @@ export const addZeroVotesToBallots = (ballots: UserBallot[], projects: number): 
  * @param ballots <UserBallot[]> The ballots
  * @returns <any> The centroids and selected indexes
  */
+// @todo optimize - do not pass UserBallot but the weights only
 export const calculateCentroids = (
     k: number, 
     ballots: UserBallot[]
@@ -145,12 +146,87 @@ export const calculateCentroids = (
 }
 
 /**
+ * Calculate the initial centroids based on the k-means++
+ * @param weights <number[][]> The weights taken from the ballots
+ * @param k <number> The number of clusters
+ * @returns <any> The initial centroids and the indexes 
+ */
+export const calculateInitialCentroidsPlusPlus = (
+    weights: number[][],
+    k: number
+    ): any => {
+    if (k > weights.length) throw new Error("The number of centroids cannot be greater than the number of ballots")
+
+    // select the first centroid randomly
+    const centroids: number[][] = [weights[randomIntegerIncluded(0, weights.length-1)]]
+
+    // select the other centroids based on the distance from this centroid
+    while (centroids.length < k) {
+        const distances = calculateDistancePlusPlus(weights, centroids)
+        centroids.push(selectNextCentroid(weights, distances))
+    }
+
+    const indexes: number[] = []
+
+    for (const centroid of centroids) {
+        indexes.push(weights.indexOf(centroid))
+    }
+    return {
+        centroids,
+        indexes
+    } 
+}
+
+/**
+ * Take the ballot weights and the centroids and 
+ * return an array of distances between the weights and
+ * their nearest centroid
+ * @param weights <number[][]> The weights
+ * @param centroids <number[][]> The centroids
+ * @returns <number[]> The distances
+ */
+export const calculateDistancePlusPlus = (weights: number[][], centroids: number[][]): number[] => {
+    return weights.map(weight => Math.min(...centroids.map(centroid => calculateDistance(weight, centroid))))
+}
+
+/**
+ * Selects the next centroid based on the k-means++ initialization
+ * 
+ * @param weights <number[][]> The weights
+ * @param distances <number[]> The distances
+ * @returns <number[]> The next centroid
+ */
+export const selectNextCentroid = (weights: number[][], distances: number[]): number[] => {
+    // sum all of the distances 
+    const sum = distances.reduce((a, b) => a + b, 0)
+    // probabilities are the relative distance of a weight to the 
+    // nearest centroid
+    const probabilities = distances.map(distance => distance / sum)
+    // generate a random number between 0 and 1
+    const random = Math.random()
+    let sumProbabilities = 0
+    // loop through the probabilities array
+    for (let i = 0; i < probabilities.length; i++) {
+        // sum them up
+        sumProbabilities += probabilities[i]
+        // if the random number is less or equal than the sum of the probabilities
+        // we have found our next centroid
+        if (random <= sumProbabilities) return weights[i]
+    }
+
+    // if no centroid was seleted, we return the last one
+    // should not hit
+    return weights[weights.length-1]
+}
+
+/**
  * Generate the centroids with the extract of a QF/QV round
  * @param k <number> The number of clusters
  * @param ballots <UserBallot[]> The ballots
  * @param indexes <number[]> The indexes to use for the centroids
  * @returns <number[][]> The centroids
  */
+// @todo optimize - do not pass UserBallot but the weights only
 export const calculateCentroidsWithIndexes = (
     k: number, 
     ballots: UserBallot[],
@@ -183,7 +259,6 @@ export const calculateCentroidsWithIndexes = (
 export const calculateDistance = (
     votes1: number[], 
     votes2: number[], 
-    numberOfProjects: number
     ): number => {
     // some error handling
     if (votes1.length !== votes2.length) 
@@ -194,13 +269,11 @@ export const calculateDistance = (
     // loop through the projects that we have 
     // we already added zero votes to make the vote array for each user 
     // the same length, and ordered it
-    for (let i=0; i<numberOfProjects; i++) {
+    for (let i=0; i<votes1.length; i++) {
         // need to calculate the tmp distance between the two votes 
         // (they should be for the same project)
         // add to the tmp distance
-        tmpDistance += (
-            votes2[i] - votes1[i]) * 
-            (votes2[i] - votes1[i])
+        tmpDistance += Math.pow(votes2[i] - votes1[i], 2) 
     }
     // return the square root 
     return Math.sqrt(tmpDistance)
@@ -233,7 +306,7 @@ export const assignVotesToClusters = (
                 break 
             }
             // calculate the distance between the vote array (for each user) and the centeroids
-            const distance = calculateDistance(weights, centroids[i], ballot.votes.length)
+            const distance = calculateDistance(weights, centroids[i])
 
             // check if we have a new minimum distance 
             if (distance < minDistance) {
@@ -293,21 +366,15 @@ export const updateCentroids = (
 /**
  * Calculate how many votes are assigned to each cluster
  * @param assignments <number[]> The assignments
- * @param projects <number> The number of projects
+ * @param k <number> The number of clusters
  * @returns <Cluster[]> The size of each cluster
  */
-export const calculateClustersSize = (assignments: number[], projects: number): Cluster[] => {
-    // initialize an empty array
-    const clustersSize: Cluster[] = Array.from({length: projects}, (_, i) => ({ index: i, size: 0 }));
+export const calculateClustersSize = (assignments: number[], k: number): Cluster[] => {
+    const clustersSizes: Cluster[] = Array.from({length: k}, (_, index) => ({index: index, size: 0}));
+    
+    for (let assignment of assignments) clustersSizes[assignment].size++;
 
-    // loop through the assignments
-    for (const assignment of assignments) {
-        // There's no need to check if the cluster exists, 
-        // because we initialized all of them.
-        clustersSize[assignment].size += 1;
-    }
-
-    return clustersSize
+    return clustersSizes
 }
 
 /**
@@ -503,7 +570,7 @@ export const kmeansQF = (
     }
 
     // now calculate the clusters size 
-    const sizes = calculateClustersSize(assignments, projects)
+    const sizes = calculateClustersSize(assignments, k)
 
     // calculate the coefficents
     const coefficents = calculateCoefficents(sizes)
@@ -584,7 +651,7 @@ export const kmeansQFFixedIndexes = (
     }
 
     // now calculate the clusters size 
-    const sizes = calculateClustersSize(assignments, projects)
+    const sizes = calculateClustersSize(assignments, k)
 
     // calculate the coefficents
     const coefficents = calculateCoefficents(sizes)
@@ -613,6 +680,91 @@ export const kmeansQFFixedIndexes = (
         initialCentroids: indexes
     }
 }
+
+
+/**
+ * 
+ * @param ballots <UserBallot[]> The ballots
+ * @param voters <number> The number of voters
+ * @param projects <number> The number of projects
+ * @param k <number> The number of clusters
+ * @param iterations <number> The number of iterations
+ * @param tolerance <number> The tolerance for the convergence check
+ * @returns <KMeansQF> The results of the QF round
+ */
+export const kmeansQFPlusPlus = (
+    ballots: UserBallot[], 
+    voters: number, 
+    projects: number, 
+    k: number,
+    iterations: number = MAX_ITERATIONS,
+    tolerance: number = TOLERANCE
+    ): KMeansQF => {
+    // prepare the data
+    addZeroVotesToBallots(ballots, projects)
+
+    // calulate the centroids for the first time 
+    const weights = ballots.map((ballot) =>
+    ballot.votes.map((vote) => vote.voteWeight))
+
+    let { centroids, indexes } = calculateInitialCentroidsPlusPlus(weights, k)
+
+    // store the assignments to the centroid for each vote
+    let assignments: number[] = []
+
+    // how many times have we actually iterated before the data converged
+    // storing this to review the data later
+    let actualIterations = 0
+
+    // loop per max iterations
+    for (let i = 0; i < iterations; i++) {
+        actualIterations += 1
+        // assign each vote to a cluster
+        assignments = assignVotesToClusters(ballots, centroids)
+        // update centroids 
+        const newCentroids = updateCentroids(ballots.map((ballot) =>
+            ballot.votes.map((vote) => vote.voteWeight)
+        ), assignments, k, projects)
+
+        // check if the centroids have converged
+        if (checkConvergence(centroids, newCentroids, tolerance)) break 
+        
+        // if not, update the centroids variable and continue looping until max interations
+        centroids = newCentroids
+    }
+
+    // now calculate the clusters size 
+    const sizes = calculateClustersSize(assignments, k)
+
+    // calculate the coefficents
+    const coefficents = calculateCoefficents(sizes)
+
+    // associate coefficients with voters
+    const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
+
+    // QF calculations
+    const qfs: number[] = []
+    for (let i = 0; i < projects; i++) {
+        qfs.push(calculateQFPerProject(votersCoefficients, ballots, i))
+    }
+
+    return {
+        voters: voters,
+        projects: projects,
+        k: k,
+        votes: ballots,
+        centroids: centroids,
+        clusters: sizes,
+        coefficients: coefficents,
+        votersCoefficients: votersCoefficients,
+        assignments: assignments,
+        qfs: qfs,
+        iterations: actualIterations,
+        initialCentroids: indexes
+    }
+    
+}
+
 
 /**
  * Export the results of the algorithm to a JSON file

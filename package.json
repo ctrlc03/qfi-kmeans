@@ -8,6 +8,7 @@
     "build": "tsc",
     "start:random": "ts-node --esm src/main_random_indexes.ts",
     "start:indexes": "ts-node --esm src/main_indexes.ts",
+    "start:plusplus": "ts-node --esm src/main_plus_plus.ts",
     "test:ts": "jest tests/index.test.ts",
     "test:circom": "jest tests/circuit.test.ts"
   },

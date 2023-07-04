@@ -641,7 +641,7 @@ describe("k-means with actual data", () => {
         it("should return the correct distance between a user ballot and a centroid", () => {
             const weights = data[0].votes.map((vote) => vote.voteWeight)
 
-            const distance = calculateDistance(weights, centroids[1], projects)
+            const distance = calculateDistance(weights, centroids[1])
 
             // 8.602 calculate by hand
             expect(distance).toBeCloseTo(8.602, 3)
@@ -777,9 +777,9 @@ describe("k-means with actual data", () => {
 
             const assignment = assignVotesToClusters([ballot], centroids)
 
-            const distanceFromCluster0 = calculateDistance(ballot.votes.map((vote) => vote.voteWeight), centroids[0], projects)
-            const distanceFromCluster1 = calculateDistance(ballot.votes.map((vote) => vote.voteWeight), centroids[1], projects)
-            const distanceFromCluster2 = calculateDistance(ballot.votes.map((vote) => vote.voteWeight), centroids[2], projects)
+            const distanceFromCluster0 = calculateDistance(ballot.votes.map((vote) => vote.voteWeight), centroids[0])
+            const distanceFromCluster1 = calculateDistance(ballot.votes.map((vote) => vote.voteWeight), centroids[1])
+            const distanceFromCluster2 = calculateDistance(ballot.votes.map((vote) => vote.voteWeight), centroids[2])
 
             // calculations
             // ballot cluster 1 = sqrt(4+25) = sqrt(29)
@@ -804,9 +804,9 @@ describe("k-means with actual data", () => {
 
             const assignment = assignVotesToClusters(ballots, centroids)
 
-            const distanceFromCluster0 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[0], projects)
-            const distanceFromCluster1 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[1], projects)
-            const distanceFromCluster2 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[2], projects)
+            const distanceFromCluster0 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[0])
+            const distanceFromCluster1 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[1])
+            const distanceFromCluster2 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[2])
 
             // calculations 
             // ballot cluster 1 = sqrt(4+25) = sqrt(29) = 5.385
@@ -831,17 +831,17 @@ describe("k-means with actual data", () => {
 
             const assignment = assignVotesToClusters(ballots, centroids)
 
-            const distanceFromCluster0 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[0], projects)
-            const distanceFromCluster1 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[1], projects)
-            const distanceFromCluster2 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[2], projects)
+            const distanceFromCluster0 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[0])
+            const distanceFromCluster1 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[1])
+            const distanceFromCluster2 = calculateDistance(ballots[0].votes.map((vote) => vote.voteWeight), centroids[2])
 
-            const distanceFromCluster0Ballot1 = calculateDistance(ballots[1].votes.map((vote) => vote.voteWeight), centroids[0], projects)
-            const distanceFromCluster1Ballot1 = calculateDistance(ballots[1].votes.map((vote) => vote.voteWeight), centroids[1], projects)
-            const distanceFromCluster2Ballot1 = calculateDistance(ballots[1].votes.map((vote) => vote.voteWeight), centroids[2], projects)
+            const distanceFromCluster0Ballot1 = calculateDistance(ballots[1].votes.map((vote) => vote.voteWeight), centroids[0])
+            const distanceFromCluster1Ballot1 = calculateDistance(ballots[1].votes.map((vote) => vote.voteWeight), centroids[1])
+            const distanceFromCluster2Ballot1 = calculateDistance(ballots[1].votes.map((vote) => vote.voteWeight), centroids[2])
 
-            const distanceFromCluster0Ballot2 = calculateDistance(ballots[2].votes.map((vote) => vote.voteWeight), centroids[0], projects)
-            const distanceFromCluster1Ballot2 = calculateDistance(ballots[2].votes.map((vote) => vote.voteWeight), centroids[1], projects)
-            const distanceFromCluster2Ballot2 = calculateDistance(ballots[2].votes.map((vote) => vote.voteWeight), centroids[2], projects)
+            const distanceFromCluster0Ballot2 = calculateDistance(ballots[2].votes.map((vote) => vote.voteWeight), centroids[0])
+            const distanceFromCluster1Ballot2 = calculateDistance(ballots[2].votes.map((vote) => vote.voteWeight), centroids[1])
+            const distanceFromCluster2Ballot2 = calculateDistance(ballots[2].votes.map((vote) => vote.voteWeight), centroids[2])
 
             expect(distanceFromCluster0).toEqual(distanceFromCluster0Ballot2)
             expect(distanceFromCluster1).toEqual(distanceFromCluster1Ballot2)
@@ -1120,7 +1120,7 @@ describe("k-means with actual data", () => {
         const assignment = assignVotesToClusters(ballots, centroids)
 
         it("should return the correct cluster sizes", () => {
-            expect(calculateClustersSize(assignment, projects)).toEqual(
+            expect(calculateClustersSize(assignment, k)).toEqual(
                 [
                     {
                         index: 0,
@@ -1132,18 +1132,6 @@ describe("k-means with actual data", () => {
                     },
                     {
                         index: 2,
-                        size: 0
-                    },
-                    {
-                        index: 3,
-                        size: 0
-                    },
-                    {
-                        index: 4,
-                        size: 0
-                    },
-                    {
-                        index: 5,
                         size: 0
                     }
                 ]

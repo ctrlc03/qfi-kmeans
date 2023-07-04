@@ -5,9 +5,9 @@
 for i in {3..10}
 do
     # run the k-means algo 
-    yarn start:random $i
+    yarn start:plusplus $i
     # plot the number of ballots x cluster
-    python3 src/plotting/plot_random_indexes.py $i 
+    python3 src/plotting/plot_k_means_plus_plus.py $i 
 done 
 
 
