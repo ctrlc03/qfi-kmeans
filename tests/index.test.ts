@@ -1,5 +1,5 @@
 import {
-    MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded,
+    MAX_ITERATIONS, TOLERANCE,
     addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findNumberOfProjects,
     calculateCentroids, calculateCentroidsWithIndexes, calculateDistance, assignVotesToClusters, checkConvergence,
     calculateCoefficents, calculateClustersSize, updateCentroids, assignVotersCoefficient, calculateQFPerProjectCoeffSquareBeforeCoefficient,

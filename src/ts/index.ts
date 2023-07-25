@@ -36,7 +36,7 @@ export {
     assignVotersCoefficient,
     assignVotesToClusters,
     outputToJSON
-} from "./k-means.js"
+} from "./experiments/k-means.js"
 export {
     KMeans
 } from "./k_means.js"

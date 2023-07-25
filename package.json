@@ -7,10 +7,8 @@
   "scripts": {
     "build": "tsc",
     "start:elbow": "ts-node --esm src/elbow.ts",
-    "start:random": "ts-node --esm src/main_random_indexes.ts",
-    "start:indexes": "ts-node --esm src/main_indexes.ts",
-    "start:plusplus": "ts-node --esm src/main_plus_plus.ts",
     "test:ts": "jest tests/index.test.ts",
+    "test:class": "jest tests/k-means.test.ts",
     "test:circom": "jest tests/circuit.test.ts"
   },
   "author": "ctrlc03",

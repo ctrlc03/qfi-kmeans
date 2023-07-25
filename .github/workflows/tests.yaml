@@ -21,5 +21,7 @@ jobs:
           chmod +x /home/runner/.local/bin/circom
       - name: Test Typescript implementations
         run: yarn test:ts
+      - name: Test class implementation
+        run: yarn test:class 
       - name: Test Circom circuits
         run: yarn test:circom
