@@ -46,5 +46,3 @@ template KmeansManhattan(k, projects) {
     match <-- index;
     clusterIndex === match;
 }
-
-component main = KmeansManhattan(7, 125);
