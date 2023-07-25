@@ -27,8 +27,8 @@ export interface KMeansQF {
     qfs: number[]
     iterations: number
     initialCentroids: number[]
+    traditionalQF: number[]
 }
-
 
 export interface Vote {
     voteOption: number 

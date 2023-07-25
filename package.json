@@ -6,6 +6,7 @@
   "main": "src/main.ts",
   "scripts": {
     "build": "tsc",
+    "start:elbow": "ts-node --esm src/elbow.ts",
     "start:random": "ts-node --esm src/main_random_indexes.ts",
     "start:indexes": "ts-node --esm src/main_indexes.ts",
     "start:plusplus": "ts-node --esm src/main_plus_plus.ts",

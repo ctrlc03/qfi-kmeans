@@ -4,13 +4,13 @@ import sys
 
 def read_data(): 
     k = sys.argv[1]
-    with open(f"./tests/data/output_k_means_plus_plus_k_{k}_1_minus_square_before_coefficient.json") as one_minus_before:
+    with open(f"./tests/data/output_k_means_elbow_k_{k}_1_minus_square_before.json") as one_minus_before:
         one_minus_before_data = json.load(one_minus_before)
-    with open(f"./tests/data/output_k_means_plus_plus_k_{k}_1_minus_square_after_coefficient.json") as one_minus_after:
+    with open(f"./tests/data/output_k_means_elbow_k_{k}_1_minus_square_after.json") as one_minus_after:
         one_minus_after_data = json.load(one_minus_after)
-    with open(f"./tests/data/output_k_means_plus_plus_k_{k}_before_coefficient.json") as before:
+    with open(f"./tests/data/output_k_means_elbow_k_{k}_square_before.json") as before:
         before_data = json.load(before)
-    with open(f"./tests/data/output_k_means_plus_plus_k_{k}_after_coefficient.json") as after:
+    with open(f"./tests/data/output_k_means_elbow_k_{k}_square_after.json") as after:
         after_data = json.load(after)
 
     return one_minus_before_data,  one_minus_after_data, before_data, after_data
@@ -30,8 +30,9 @@ def parse_data():
     qfs_before = before_data['qfs']
     qfs_after = after_data['qfs']
     trad_qf = one_minus_before_data['tradQF']
+    wcss = one_minus_before_data['wcss']
 
-    return clusters, assignments, userCoefficients_one_minus, userCoefficients, voters, clusterSizes, sizes, userCoefficients, projects, qfs_minus_before, qfs_minus_after, qfs_before, qfs_after, trad_qf
+    return clusters, assignments, userCoefficients_one_minus, userCoefficients, voters, clusterSizes, sizes, userCoefficients, projects, qfs_minus_before, qfs_minus_after, qfs_before, qfs_after, trad_qf, wcss
 
 def plot_by_size_of_clusters(clusters, sizes):
     plt.bar(list(range(1, clusters+1)), sizes , color='g')

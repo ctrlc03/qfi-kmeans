@@ -109,6 +109,20 @@ export const addZeroVotesToBallots = (ballots: UserBallot[], projects: number): 
 }
 
 /**
+ * Square the ballots weights
+ * @param ballots <UserBallot[]> - the user ballots
+ * @returns <UserBallot[]> - the updated user ballots
+ */
+export const squareVotes = (ballots: UserBallot[]): UserBallot[] => {
+    return ballots.map(userBallot => {
+        const newVotes = userBallot.votes.map(vote => {
+            return { ...vote, voteWeight: vote.voteWeight * vote.voteWeight };
+        })
+        return { ...userBallot, votes: newVotes };
+    })
+} 
+
+/**
  * Generate the centroids with the extract of a QF/QV round
  * @param k <number> The number of clusters
  * @param ballots <UserBallot[]> The ballots
@@ -379,11 +393,14 @@ export const calculateClustersSize = (assignments: number[], k: number): Cluster
 
 /**
  * Calculate the coefficents for each cluster
- * @notice the coefficient is 1/cluster size
+ * @notice the coefficient is clusterSize/voters
  * @param clustersSize <Cluster[]> The object of clusters size
  * @returns <Coefficent[]> The coefficents
  */
-export const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
+export const calculateCoefficents = (
+    clustersSize: Cluster[], 
+    ballots: number
+    ): Coefficent[] => {
     const coefficents: Coefficent[] = []
     // loop through all the clusters
     for (const clusterSize of clustersSize) 
@@ -392,11 +409,39 @@ export const calculateCoefficents = (clustersSize: Cluster[]): Coefficent[] => {
             clusterIndex: clusterSize.index,
             // if the size is zero then the coefficient is 1 (or zero)
             // this means no users will have this coefficient
-            coefficient: clusterSize.size !== 0 ?  1/clusterSize.size : 1
+            // 1/clusterSize
+            // coefficient: clusterSize.size !== 0 ?  1/clusterSize.size : 1
+            // clusterSize / ballots @note rewarding larger groups 
+            coefficient: clusterSize.size !== 0 ?  clusterSize.size/ballots : 1
         })
     
     return coefficents
 }
+
+/**
+ * Calculate the coefficents for each cluster
+ * @notice the coefficient 1 - clusterSize/voters
+ * @param clustersSize <Cluster[]> The object of clusters size
+ * @returns <Coefficent[]> The coefficents
+ */
+export const calculateCoefficentsOneMinus = (
+    clustersSize: Cluster[], 
+    ballots: number
+    ): Coefficent[] => {
+    const coefficents: Coefficent[] = []
+    // loop through all the clusters
+    for (const clusterSize of clustersSize) 
+        // store the cluster index and the coefficient (1/cluster size)
+        coefficents.push({
+            clusterIndex: clusterSize.index,
+            // if the size is zero then the coefficient is 1 (or zero)
+            // this means no users will have this coefficient
+            // 1 - clusterSize / ballots @note rewarding smaller groups 
+            coefficient: clusterSize.size !== 0 ?  1 - clusterSize.size/ballots : 1
+        })
+    
+    return coefficents
+} 
 
 /**
  * Assign each voter to its coefficient and cluster number
@@ -427,7 +472,7 @@ export const assignVotersCoefficient = (assignments: number[], coefficents: Coef
  * @param projectIndex <number> The project index
  * @returns <number> The matching amount
  */
-export const calculateQFPerProject = (
+export const calculateQFPerProjectSquareAfterCoefficient = (
     votersCoefficients: VotersCoefficients[], 
     ballots: UserBallot[], 
     projectIndex: number
@@ -439,10 +484,39 @@ export const calculateQFPerProject = (
     // loop through votes array
     for (const ballot of ballots) {
         const index = ballots.indexOf(ballot)
-        sum += Math.sqrt(
-            ballot.votes[projectIndex].voteWeight * 
+        sum += 
+            Math.sqrt(ballot.votes[projectIndex].voteWeight * 
+            votersCoefficients[index].coefficent)
+        
+    }
+
+    // the result should be squared
+    return Math.pow(sum, 2)
+}
+
+/**
+ * Calculate the matching amount per project based on the votes
+ * and the coefficients. The coefficients are applied after sqrt(weight)
+ * @param votersCoefficients <VotersCoefficients[]> The voters coefficents
+ * @param ballots <UserBallot[]> The user ballots with the votes
+ * @param projectIndex <number> The project index
+ * @returns <number> The matching amount
+ */
+export const calculateQFPerProjectCoeffSquareBeforeCoefficient = ( 
+    votersCoefficients: VotersCoefficients[], 
+    ballots: UserBallot[], 
+    projectIndex: number) => {
+    // =SUM([vote1User1*s,vote1User2*r,vote1User3*t]**0.5)**2
+    // interim sum 
+    let sum = 0
+
+    // loop through votes array
+    for (const ballot of ballots) {
+        const index = ballots.indexOf(ballot)
+        sum += 
+            Math.sqrt(ballot.votes[projectIndex].voteWeight) * 
             votersCoefficients[index].coefficent
-        )
+        
     }
 
     // the result should be squared
@@ -464,7 +538,8 @@ export const calculateTraditionalQF = (
     // loop through ballots
     for (let i = 0; i < ballots.length; i++) {
         // add up to the sum the square root of the vote weight for x project
-        sum += Math.sqrt(ballots[projectIndex][projectIndex])
+        // sum += Math.sqrt(ballots[i][projectIndex])
+        sum += Math.sqrt(ballots[i][projectIndex])
     }
     // the result should be squared
     return Math.pow(sum, 2)
@@ -538,7 +613,6 @@ export const kmeansQF = (
     iterations: number = MAX_ITERATIONS,
     tolerance: number = TOLERANCE
     ): KMeansQF => {
-
     // prepare the data
     addZeroVotesToBallots(ballots, projects)
 
@@ -573,15 +647,18 @@ export const kmeansQF = (
     const sizes = calculateClustersSize(assignments, k)
 
     // calculate the coefficents
-    const coefficents = calculateCoefficents(sizes)
+    const coefficents = calculateCoefficents(sizes, ballots.length)
 
     // associate coefficients with voters
     const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
 
     // QF calculations
     const qfs: number[] = []
+    let tradQFS: number[] = calculateTraditionalQFForAllProjects(ballots.map((ballot) =>
+    ballot.votes.map((vote) => vote.voteWeight)), projects)
     for (let i = 0; i < projects; i++) {
-        qfs.push(calculateQFPerProject(votersCoefficients, ballots, i))
+        qfs.push(calculateQFPerProjectCoeffSquareBeforeCoefficient(votersCoefficients, ballots, i))
+        
     }
 
     return {
@@ -595,6 +672,7 @@ export const kmeansQF = (
         votersCoefficients: votersCoefficients,
         assignments: assignments,
         qfs: qfs,
+        traditionalQF: tradQFS,
         iterations: actualIterations,
         initialCentroids: indexes
     }
@@ -654,7 +732,7 @@ export const kmeansQFFixedIndexes = (
     const sizes = calculateClustersSize(assignments, k)
 
     // calculate the coefficents
-    const coefficents = calculateCoefficents(sizes)
+    const coefficents = calculateCoefficents(sizes, ballots.length)
 
     // associate coefficients with voters
     const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
@@ -662,7 +740,7 @@ export const kmeansQFFixedIndexes = (
     // QF calculations
     const qfs: number[] = []
     for (let i = 0; i < projects; i++) {
-        qfs.push(calculateQFPerProject(votersCoefficients, ballots, i))
+        qfs.push(calculateQFPerProjectSquareAfterCoefficient(votersCoefficients, ballots, i))
     }
 
     return {
@@ -677,13 +755,16 @@ export const kmeansQFFixedIndexes = (
         assignments: assignments,
         qfs: qfs,
         iterations: actualIterations,
-        initialCentroids: indexes
+        initialCentroids: indexes,
+        traditionalQF: []
     }
 }
 
 
 /**
- * 
+ * Apply the algo k-means++
+ * @notice square after applying coefficient
+ * @notice coefficient = clusterSize/voters
  * @param ballots <UserBallot[]> The ballots
  * @param voters <number> The number of voters
  * @param projects <number> The number of projects
@@ -692,7 +773,7 @@ export const kmeansQFFixedIndexes = (
  * @param tolerance <number> The tolerance for the convergence check
  * @returns <KMeansQF> The results of the QF round
  */
-export const kmeansQFPlusPlus = (
+export const kmeansQFPlusPlusSquareAfter = (
     ballots: UserBallot[], 
     voters: number, 
     projects: number, 
@@ -700,7 +781,9 @@ export const kmeansQFPlusPlus = (
     iterations: number = MAX_ITERATIONS,
     tolerance: number = TOLERANCE
     ): KMeansQF => {
-    // prepare the data
+    // square votes first
+    ballots = squareVotes(ballots)
+    // prepare the data (@todo square it first)
     addZeroVotesToBallots(ballots, projects)
 
     // calulate the centroids for the first time 
@@ -737,7 +820,7 @@ export const kmeansQFPlusPlus = (
     const sizes = calculateClustersSize(assignments, k)
 
     // calculate the coefficents
-    const coefficents = calculateCoefficents(sizes)
+    const coefficents = calculateCoefficents(sizes, ballots.length)
 
     // associate coefficients with voters
     const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
@@ -745,8 +828,10 @@ export const kmeansQFPlusPlus = (
     // QF calculations
     const qfs: number[] = []
     for (let i = 0; i < projects; i++) {
-        qfs.push(calculateQFPerProject(votersCoefficients, ballots, i))
+        qfs.push(calculateQFPerProjectSquareAfterCoefficient(votersCoefficients, ballots, i))
     }
+
+    const traditionalQF = calculateTraditionalQFForAllProjects(weights, projects)
 
     return {
         voters: voters,
@@ -760,12 +845,430 @@ export const kmeansQFPlusPlus = (
         assignments: assignments,
         qfs: qfs,
         iterations: actualIterations,
-        initialCentroids: indexes
+        initialCentroids: indexes,
+        traditionalQF: traditionalQF
     }
     
 }
 
+/**
+ * Apply the algo k-means++
+ * @notice square after applying coefficient
+ * @notice coefficient = clusterSize/voters
+ * @param ballots <UserBallot[]> The ballots
+ * @param voters <number> The number of voters
+ * @param projects <number> The number of projects
+ * @param k <number> The number of clusters
+ * @param iterations <number> The number of iterations
+ * @param tolerance <number> The tolerance for the convergence check
+ * @returns <KMeansQF> The results of the QF round
+ */
+export const kmeansQFPlusPlusSquareBefore = (
+    ballots: UserBallot[], 
+    voters: number, 
+    projects: number, 
+    k: number,
+    iterations: number = MAX_ITERATIONS,
+    tolerance: number = TOLERANCE
+    ): KMeansQF => {
+    // square votes first
+    ballots = squareVotes(ballots)
+    // prepare the data 
+    addZeroVotesToBallots(ballots, projects)
 
+    // calulate the centroids for the first time 
+    const weights = ballots.map((ballot) =>
+    ballot.votes.map((vote) => vote.voteWeight))
+
+    let { centroids, indexes } = calculateInitialCentroidsPlusPlus(weights, k)
+
+    // store the assignments to the centroid for each vote
+    let assignments: number[] = []
+
+    // how many times have we actually iterated before the data converged
+    // storing this to review the data later
+    let actualIterations = 0
+
+    // loop per max iterations
+    for (let i = 0; i < iterations; i++) {
+        actualIterations += 1
+        // assign each vote to a cluster
+        assignments = assignVotesToClusters(ballots, centroids)
+        // update centroids 
+        const newCentroids = updateCentroids(ballots.map((ballot) =>
+            ballot.votes.map((vote) => vote.voteWeight)
+        ), assignments, k, projects)
+
+        // check if the centroids have converged
+        if (checkConvergence(centroids, newCentroids, tolerance)) break 
+        
+        // if not, update the centroids variable and continue looping until max interations
+        centroids = newCentroids
+    }
+
+    // now calculate the clusters size 
+    const sizes = calculateClustersSize(assignments, k)
+
+    // calculate the coefficents
+    const coefficents = calculateCoefficents(sizes, ballots.length)
+
+    // associate coefficients with voters
+    const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
+
+    // QF calculations
+    const qfs: number[] = []
+    for (let i = 0; i < projects; i++) {
+        qfs.push(calculateQFPerProjectCoeffSquareBeforeCoefficient(votersCoefficients, ballots, i))
+    }
+
+    const traditionalQF = calculateTraditionalQFForAllProjects(weights, projects)
+
+    return {
+        voters: voters,
+        projects: projects,
+        k: k,
+        votes: ballots,
+        centroids: centroids,
+        clusters: sizes,
+        coefficients: coefficents,
+        votersCoefficients: votersCoefficients,
+        assignments: assignments,
+        qfs: qfs,
+        iterations: actualIterations,
+        initialCentroids: indexes,
+        traditionalQF: traditionalQF
+    }
+    
+}
+
+/**
+ * Apply the algo k-means++
+ * @notice square before applying coefficient
+ * @notice coefficient = 1 - clusterSize/voters
+ * @param ballots <UserBallot[]> The ballots
+ * @param voters <number> The number of voters
+ * @param projects <number> The number of projects
+ * @param k <number> The number of clusters
+ * @param iterations <number> The number of iterations
+ * @param tolerance <number> The tolerance for the convergence check
+ * @returns <KMeansQF> The results of the QF round
+ */
+export const kmeansQFPlusPlusOneMinusSquareBefore = (
+    ballots: UserBallot[], 
+    voters: number, 
+    projects: number, 
+    k: number,
+    iterations: number = MAX_ITERATIONS,
+    tolerance: number = TOLERANCE
+    ): KMeansQF => {
+    // square votes first
+    ballots = squareVotes(ballots)
+    // prepare the data (@todo square it first)
+    addZeroVotesToBallots(ballots, projects)
+
+    // calulate the centroids for the first time 
+    const weights = ballots.map((ballot) =>
+    ballot.votes.map((vote) => vote.voteWeight))
+
+    let { centroids, indexes } = calculateInitialCentroidsPlusPlus(weights, k)
+
+    // store the assignments to the centroid for each vote
+    let assignments: number[] = []
+
+    // how many times have we actually iterated before the data converged
+    // storing this to review the data later
+    let actualIterations = 0
+
+    // loop per max iterations
+    for (let i = 0; i < iterations; i++) {
+        actualIterations += 1
+        // assign each vote to a cluster
+        assignments = assignVotesToClusters(ballots, centroids)
+        // update centroids 
+        const newCentroids = updateCentroids(ballots.map((ballot) =>
+            ballot.votes.map((vote) => vote.voteWeight)
+        ), assignments, k, projects)
+
+        // check if the centroids have converged
+        if (checkConvergence(centroids, newCentroids, tolerance)) break 
+        
+        // if not, update the centroids variable and continue looping until max interations
+        centroids = newCentroids
+    }
+
+    // now calculate the clusters size 
+    const sizes = calculateClustersSize(assignments, k)
+
+    // calculate the coefficents
+    const coefficents = calculateCoefficentsOneMinus(sizes, ballots.length)
+
+    // associate coefficients with voters
+    const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
+
+    // QF calculations
+    const qfs: number[] = []
+    for (let i = 0; i < projects; i++) {
+        qfs.push(calculateQFPerProjectCoeffSquareBeforeCoefficient(votersCoefficients, ballots, i))
+    }
+
+    const traditionalQF = calculateTraditionalQFForAllProjects(weights, projects)
+
+    return {
+        voters: voters,
+        projects: projects,
+        k: k,
+        votes: ballots,
+        centroids: centroids,
+        clusters: sizes,
+        coefficients: coefficents,
+        votersCoefficients: votersCoefficients,
+        assignments: assignments,
+        qfs: qfs,
+        iterations: actualIterations,
+        initialCentroids: indexes,
+        traditionalQF: traditionalQF
+    }
+    
+}
+
+/**
+ * Apply the algo k-means++
+ * @notice square after applying coefficient
+ * @notice coefficient = 1 - clusterSize/voters
+ * @param ballots <UserBallot[]> The ballots
+ * @param voters <number> The number of voters
+ * @param projects <number> The number of projects
+ * @param k <number> The number of clusters
+ * @param iterations <number> The number of iterations
+ * @param tolerance <number> The tolerance for the convergence check
+ * @returns <KMeansQF> The results of the QF round
+ */
+export const kmeansQFPlusPlusOneMinusSquareAfter = (
+    ballots: UserBallot[], 
+    voters: number, 
+    projects: number, 
+    k: number,
+    iterations: number = MAX_ITERATIONS,
+    tolerance: number = TOLERANCE
+    ): KMeansQF => {
+    // square votes first
+    ballots = squareVotes(ballots)
+    // prepare the data (@todo square it first)
+    addZeroVotesToBallots(ballots, projects)
+
+    // calulate the centroids for the first time 
+    const weights = ballots.map((ballot) =>
+    ballot.votes.map((vote) => vote.voteWeight))
+
+    let { centroids, indexes } = calculateInitialCentroidsPlusPlus(weights, k)
+
+    // store the assignments to the centroid for each vote
+    let assignments: number[] = []
+
+    // how many times have we actually iterated before the data converged
+    // storing this to review the data later
+    let actualIterations = 0
+
+    // loop per max iterations
+    for (let i = 0; i < iterations; i++) {
+        actualIterations += 1
+        // assign each vote to a cluster
+        assignments = assignVotesToClusters(ballots, centroids)
+        // update centroids 
+        const newCentroids = updateCentroids(ballots.map((ballot) =>
+            ballot.votes.map((vote) => vote.voteWeight)
+        ), assignments, k, projects)
+
+        // check if the centroids have converged
+        if (checkConvergence(centroids, newCentroids, tolerance)) break 
+        
+        // if not, update the centroids variable and continue looping until max interations
+        centroids = newCentroids
+    }
+
+    // now calculate the clusters size 
+    const sizes = calculateClustersSize(assignments, k)
+
+    // calculate the coefficents
+    const coefficents = calculateCoefficentsOneMinus(sizes, ballots.length)
+
+    // associate coefficients with voters
+    const votersCoefficients = assignVotersCoefficient(assignments, coefficents)
+
+    // QF calculations
+    const qfs: number[] = []
+    for (let i = 0; i < projects; i++) {
+        qfs.push(calculateQFPerProjectSquareAfterCoefficient(votersCoefficients, ballots, i))
+    }
+
+    const traditionalQF = calculateTraditionalQFForAllProjects(weights, projects)
+
+    return {
+        voters: voters,
+        projects: projects,
+        k: k,
+        votes: ballots,
+        centroids: centroids,
+        clusters: sizes,
+        coefficients: coefficents,
+        votersCoefficients: votersCoefficients,
+        assignments: assignments,
+        qfs: qfs,
+        iterations: actualIterations,
+        initialCentroids: indexes,
+        traditionalQF: traditionalQF
+    }
+    
+}
+
+/**
+ * Apply the algo k-means++ using all combinations 
+ * @param ballots <UserBallot[]> The ballots
+ * @param voters <number> The number of voters
+ * @param projects <number> The number of projects
+ * @param k <number> The number of clusters
+ * @param iterations <number> The number of iterations
+ * @param tolerance <number> The tolerance for the convergence check
+ */
+export const kmeansQFPlusPlusAllCombinations = (
+    ballots: UserBallot[], 
+    voters: number, 
+    projects: number, 
+    k: number,
+    iterations: number = MAX_ITERATIONS,
+    tolerance: number = TOLERANCE
+    ): void => {
+    // square votes first
+    ballots = squareVotes(ballots)
+    // prepare the data (@todo square it first)
+    addZeroVotesToBallots(ballots, projects)
+
+    // calulate the centroids for the first time 
+    const weights = ballots.map((ballot) =>
+    ballot.votes.map((vote) => vote.voteWeight))
+
+    let { centroids, indexes } = calculateInitialCentroidsPlusPlus(weights, k)
+
+    // store the assignments to the centroid for each vote
+    let assignments: number[] = []
+
+    // how many times have we actually iterated before the data converged
+    // storing this to review the data later
+    let actualIterations = 0
+
+    // loop per max iterations
+    for (let i = 0; i < iterations; i++) {
+        actualIterations += 1
+        // assign each vote to a cluster
+        assignments = assignVotesToClusters(ballots, centroids)
+        // update centroids 
+        const newCentroids = updateCentroids(ballots.map((ballot) =>
+            ballot.votes.map((vote) => vote.voteWeight)
+        ), assignments, k, projects)
+
+        // check if the centroids have converged
+        if (checkConvergence(centroids, newCentroids, tolerance)) break 
+        
+        // if not, update the centroids variable and continue looping until max interations
+        centroids = newCentroids
+    }
+
+    // now calculate the clusters size 
+    const sizes = calculateClustersSize(assignments, k)
+
+    // calculate the coefficents
+    const coefficientsOneMinus = calculateCoefficentsOneMinus(sizes, ballots.length)
+    const coefficients = calculateCoefficents(sizes, ballots.length)
+
+    // associate coefficients with voters
+    const votersCoefficients = assignVotersCoefficient(assignments, coefficients)
+    const votersCoefficientsOneMinus = assignVotersCoefficient(assignments, coefficientsOneMinus)
+
+    // QF calculations
+    const qfsBeforeCoefficientSquareOneMinus: number[] = []
+    const qfsAfterCoefficientSquareOneMinus: number[] = []
+    const qfsAfterCoefficientSquare: number[] = []
+    const qfsBeforeCoefficientSquare: number[] = []
+
+    for (let i = 0; i < projects; i++) {
+        qfsBeforeCoefficientSquareOneMinus.push(calculateQFPerProjectCoeffSquareBeforeCoefficient(votersCoefficientsOneMinus, ballots, i))
+        qfsAfterCoefficientSquareOneMinus.push(calculateQFPerProjectSquareAfterCoefficient(votersCoefficientsOneMinus, ballots, i))
+        qfsAfterCoefficientSquare.push(calculateQFPerProjectSquareAfterCoefficient(votersCoefficients, ballots, i))
+        qfsBeforeCoefficientSquare.push(calculateQFPerProjectCoeffSquareBeforeCoefficient(votersCoefficients, ballots, i))
+    }
+
+    const traditionalQF = calculateTraditionalQFForAllProjects(weights, projects)
+
+    const first = {
+        voters: voters,
+        projects: projects,
+        k: k,
+        votes: ballots,
+        centroids: centroids,
+        clusters: sizes,
+        coefficients: coefficients,
+        votersCoefficients: votersCoefficientsOneMinus,
+        assignments: assignments,
+        qfs: qfsBeforeCoefficientSquareOneMinus,
+        iterations: actualIterations,
+        initialCentroids: indexes,
+        traditionalQF: traditionalQF
+    }
+
+    const second = {
+        voters: voters,
+        projects: projects,
+        k: k,
+        votes: ballots,
+        centroids: centroids,
+        clusters: sizes,
+        coefficients: coefficients,
+        votersCoefficients: votersCoefficientsOneMinus,
+        assignments: assignments,
+        qfs: qfsAfterCoefficientSquare,
+        iterations: actualIterations,
+        initialCentroids: indexes,
+        traditionalQF: traditionalQF
+    }
+
+    const third = {
+        voters: voters,
+        projects: projects,
+        k: k,
+        votes: ballots,
+        centroids: centroids,
+        clusters: sizes,
+        coefficients: coefficients,
+        votersCoefficients: votersCoefficients,
+        assignments: assignments,
+        qfs: qfsAfterCoefficientSquare,
+        iterations: actualIterations,
+        initialCentroids: indexes,
+        traditionalQF: traditionalQF
+    }
+
+    const fourth = {
+        voters: voters,
+        projects: projects,
+        k: k,
+        votes: ballots,
+        centroids: centroids,
+        clusters: sizes,
+        coefficients: coefficients,
+        votersCoefficients: votersCoefficients,
+        assignments: assignments,
+        qfs: qfsBeforeCoefficientSquare,
+        iterations: actualIterations,
+        initialCentroids: indexes,
+        traditionalQF: traditionalQF
+    }
+
+    outputToJSON(first, `./tests/data/output_k_means_plus_plus_k_${k}_1_minus_square_before_coefficient.json`)
+    outputToJSON(second, `./tests/data/output_k_means_plus_plus_k_${k}_1_minus_square_after_coefficient.json`)
+    outputToJSON(third, `./tests/data/output_k_means_plus_plus_k_${k}_before_coefficient.json`)
+    outputToJSON(fourth, `./tests/data/output_k_means_plus_plus_k_${k}_after_coefficient.json`)
+
+}
 /**
  * Export the results of the algorithm to a JSON file
  * @param data <KMeansQF> The data to export
@@ -779,9 +1282,71 @@ export const outputToJSON = (data: KMeansQF, path: string): void => {
         "clusters": data.clusters,
         "voters": data.votersCoefficients.length,
         "initialCentroids": data.initialCentroids,
-        "userCoefficients": data.votersCoefficients.map(coefficient => coefficient.coefficent)
+        "userCoefficients": data.votersCoefficients.map(coefficient => coefficient.coefficent),
+        "qfs": data.qfs,
+        "projects": data.projects,
+        "tradQF": data.traditionalQF
     }
 
     fs.writeFileSync(path, JSON.stringify(json, null, 4))
 
 }
+
+// export const calculateWCSS = (weights: number[][], centroids: number[][]) => {
+//     let wcss = 0 
+//     for (let i = 0; i < weights.length; i++) {
+//         const closestCentroid = findClosestCentroid(weights[i], centroids)
+//     }
+// }
+
+/**
+ * Run the elbow method to find the optimal number of clusters
+ */
+export const elbowMethod = (
+    k: number,
+    ballots: UserBallot[],
+    voters: number, 
+    projects: number,
+    iterations: number = MAX_ITERATIONS,
+    tolerance: number = TOLERANCE
+) => {
+    // square votes first
+    ballots = squareVotes(ballots)
+    // prepare the data (@todo square it first)
+    addZeroVotesToBallots(ballots, projects)
+
+    // calulate the centroids for the first time 
+    const weights = ballots.map((ballot) =>
+    ballot.votes.map((vote) => vote.voteWeight))
+
+    let { centroids, indexes } = calculateInitialCentroidsPlusPlus(weights, k)
+
+    // store the assignments to the centroid for each vote
+    let assignments: number[] = []
+
+    // how many times have we actually iterated before the data converged
+    // storing this to review the data later
+    let actualIterations = 0
+
+    // loop per max iterations
+    for (let i = 0; i < iterations; i++) {
+        actualIterations += 1
+        // assign each vote to a cluster
+        assignments = assignVotesToClusters(ballots, centroids)
+        // update centroids 
+        const newCentroids = updateCentroids(ballots.map((ballot) =>
+            ballot.votes.map((vote) => vote.voteWeight)
+        ), assignments, k, projects)
+
+        // check if the centroids have converged
+        if (checkConvergence(centroids, newCentroids, tolerance)) break 
+        
+        // if not, update the centroids variable and continue looping until max interations
+        centroids = newCentroids
+    }
+
+
+ 
+}
+
+export const runElbowMethod = () => {}

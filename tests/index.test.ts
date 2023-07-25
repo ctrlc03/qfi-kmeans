@@ -1,226 +1,10 @@
 import {
-    testCalculateCentroids,
-    testCalculateTraditionalQF,
-    testGenerateVector,
-    testGenerateVotes,
-    testKmeanQFWithVotes,
-    testKmeansQF,
     MAX_ITERATIONS, TOLERANCE, randomIntegerIncluded,
     addZeroVotesToBallots, parseVoteData, voteOptionExists, expandNumberToArray, extractZeroVotes, findNumberOfProjects,
     calculateCentroids, calculateCentroidsWithIndexes, calculateDistance, assignVotesToClusters, checkConvergence,
-    calculateCoefficents, calculateClustersSize, updateCentroids, assignVotersCoefficient, calculateQFPerProject,
+    calculateCoefficents, calculateClustersSize, updateCentroids, assignVotersCoefficient, calculateQFPerProjectCoeffSquareBeforeCoefficient,
     Cluster, UserBallot
 } from "../src/ts/index"
-
-describe("test k-means with random data", () => {
-    describe("testGenerateVector", () => {
-        const projects = 10
-        it("should generate the correct vector for indexes [0, 4, 5, 6, 7, 8]", () => {
-            const indexes = [0, 4, 5, 6, 7, 8]
-            const vector = testGenerateVector(indexes, projects)
-            expect(vector.length).toBe(projects)
-
-            expect(vector[0]).toBeGreaterThan(0)
-            expect(vector[1]).toBe(0)
-            expect(vector[2]).toBe(0)
-            expect(vector[3]).toBe(0)
-            expect(vector[4]).toBeGreaterThan(0)
-            expect(vector[5]).toBeGreaterThan(0)
-            expect(vector[6]).toBeGreaterThan(0)
-            expect(vector[7]).toBeGreaterThan(0)
-            expect(vector[8]).toBeGreaterThan(0)
-        })
-        it("should generate the correct vector for indexes [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]", () => {
-            const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-            const vector = testGenerateVector(indexes, projects)
-            expect(vector.length).toBe(projects)
-
-            expect(vector[0]).toBeGreaterThan(0)
-            expect(vector[1]).toBeGreaterThan(0)
-            expect(vector[2]).toBeGreaterThan(0)
-            expect(vector[3]).toBeGreaterThan(0)
-            expect(vector[4]).toBeGreaterThan(0)
-            expect(vector[5]).toBeGreaterThan(0)
-            expect(vector[6]).toBeGreaterThan(0)
-            expect(vector[7]).toBeGreaterThan(0)
-            expect(vector[8]).toBeGreaterThan(0)
-            expect(vector[9]).toBeGreaterThan(0)
-        })
-        it("should generate the correct vector for indexes [0, 1, 2, 3, 4, 5, 6, 7, 8]", () => {
-            const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-            const vector = testGenerateVector(indexes, projects)
-            expect(vector.length).toBe(projects)
-
-            expect(vector[0]).toBeGreaterThan(0)
-            expect(vector[1]).toBeGreaterThan(0)
-            expect(vector[2]).toBeGreaterThan(0)
-            expect(vector[3]).toBeGreaterThan(0)
-            expect(vector[4]).toBeGreaterThan(0)
-            expect(vector[5]).toBeGreaterThan(0)
-            expect(vector[6]).toBeGreaterThan(0)
-            expect(vector[7]).toBeGreaterThan(0)
-            expect(vector[8]).toBeGreaterThan(0)
-            expect(vector[9]).toBe(0)
-        })
-        it("should generate the correct vector for indexes [0, 1, 2, 3, 4, 5, 6, 7]", () => {
-            const indexes = [0, 1, 2, 3, 4, 5, 6, 7]
-            const vector = testGenerateVector(indexes, projects)
-            expect(vector.length).toBe(projects)
-
-            expect(vector[0]).toBeGreaterThan(0)
-            expect(vector[1]).toBeGreaterThan(0)
-            expect(vector[2]).toBeGreaterThan(0)
-            expect(vector[3]).toBeGreaterThan(0)
-            expect(vector[4]).toBeGreaterThan(0)
-            expect(vector[5]).toBeGreaterThan(0)
-            expect(vector[6]).toBeGreaterThan(0)
-            expect(vector[7]).toBeGreaterThan(0)
-            expect(vector[8]).toBe(0)
-            expect(vector[9]).toBe(0)
-        })
-        it("should generate the correct vector for indexes [0, 1, 2, 3, 4, 5, 6]", () => {
-            const indexes = [0, 1, 2, 3, 4, 5, 6]
-            const vector = testGenerateVector(indexes, projects)
-            expect(vector.length).toBe(projects)
-
-            expect(vector[0]).toBeGreaterThan(0)
-            expect(vector[1]).toBeGreaterThan(0)
-            expect(vector[2]).toBeGreaterThan(0)
-            expect(vector[3]).toBeGreaterThan(0)
-            expect(vector[4]).toBeGreaterThan(0)
-            expect(vector[5]).toBeGreaterThan(0)
-            expect(vector[6]).toBeGreaterThan(0)
-            expect(vector[7]).toBe(0)
-            expect(vector[8]).toBe(0)
-            expect(vector[9]).toBe(0)
-        })
-        it("should generate the correct vector for indexes [0, 1, 2, 3, 4, 5]", () => {
-            const indexes = [0, 1, 2, 3, 4, 5]
-            const vector = testGenerateVector(indexes, projects)
-            expect(vector.length).toBe(projects)
-
-            expect(vector[0]).toBeGreaterThan(0)
-            expect(vector[1]).toBeGreaterThan(0)
-            expect(vector[2]).toBeGreaterThan(0)
-            expect(vector[3]).toBeGreaterThan(0)
-            expect(vector[4]).toBeGreaterThan(0)
-            expect(vector[5]).toBeGreaterThan(0)
-            expect(vector[6]).toBe(0)
-            expect(vector[7]).toBe(0)
-            expect(vector[8]).toBe(0)
-            expect(vector[9]).toBe(0)
-        })
-        it("should generate the correct vector for indexes [3, 4, 5, 6]", () => {
-            const indexes = [3, 4, 5, 6]
-            const vector = testGenerateVector(indexes, projects)
-            expect(vector.length).toBe(projects)
-
-            expect(vector[0]).toBe(0)
-            expect(vector[1]).toBe(0)
-            expect(vector[2]).toBe(0)
-            expect(vector[3]).toBeGreaterThan(0)
-            expect(vector[4]).toBeGreaterThan(0)
-            expect(vector[5]).toBeGreaterThan(0)
-            expect(vector[6]).toBeGreaterThan(0)
-            expect(vector[7]).toBe(0)
-            expect(vector[8]).toBe(0)
-            expect(vector[9]).toBe(0)
-        })
-        it("should generate the correct vector for indexes [2, 3, 7, 8, 9]", () => {
-            const indexes = [2, 3, 7, 8, 9]
-            const vector = testGenerateVector(indexes, projects)
-            expect(vector.length).toBe(projects)
-
-            expect(vector[0]).toBe(0)
-            expect(vector[1]).toBe(0)
-            expect(vector[2]).toBeGreaterThan(0)
-            expect(vector[3]).toBeGreaterThan(0)
-            expect(vector[4]).toBe(0)
-            expect(vector[5]).toBe(0)
-            expect(vector[6]).toBe(0)
-            expect(vector[7]).toBeGreaterThan(0)
-            expect(vector[8]).toBeGreaterThan(0)
-            expect(vector[9]).toBeGreaterThan(0)
-        })
-    })
-
-    describe("testCalculateCentroids", () => {
-        const voters = 100
-        const projects = 10
-        const k = 5
-        it("should create the correct number of centroids", () => {
-            // generate random votes
-            const votes = testGenerateVotes(voters, projects)
-            const centroids = testCalculateCentroids(k, votes)
-
-            expect(centroids.length).toBe(k)
-        })
-    })
-
-    describe("randomIntegerIncluded", () => {
-        it("should generate a number between x and y", () => {
-            const x = 0
-            const y = 10
-            for (let i = 0; i < 1000; i++) {
-                const random = randomIntegerIncluded(x, y)
-                expect(random).toBeGreaterThanOrEqual(x)
-                expect(random).toBeLessThanOrEqual(y)
-            }
-        })
-    })
-
-    describe("test comparisons", () => {
-        it("k-means allocations should be smaller than traditional qf", () => {
-            const projects = 10
-            const voters = 100
-            const k = 5
-            const kMeans = testKmeansQF(projects, voters, k)
-            for (let i = 0; i < projects; i++) {
-                expect(
-                    kMeans.qfs[i])
-                    .toBeLessThanOrEqual(
-                        testCalculateTraditionalQF(kMeans.votes, i
-                        )
-                    )
-            }
-        })
-
-        // @todo not always true
-        it.skip("higher k should result in larger allocations", () => {
-            const projects = 10
-            const voters = 100
-            const k1 = 5
-            const k2 = 6
-            const k3 = 10
-            const votes = testGenerateVotes(voters, projects)
-            const kMeans1 = testKmeanQFWithVotes(votes, voters, projects, k1)
-            const kMeans2 = testKmeanQFWithVotes(votes, voters, projects, k2)
-            const kMeans3 = testKmeanQFWithVotes(votes, voters, projects, k3)
-
-            for (let i = 0; i < projects; i++) {
-                expect(kMeans1.qfs[i]).toBeLessThan(kMeans2.qfs[i])
-                expect(kMeans2.qfs[i]).toBeLessThan(kMeans3.qfs[i])
-            }
-        })
-
-        // @todo understand how iterations change the result
-        // it("larger iterations and same k should result in larger allocations", () => {
-        //     const projects = 10
-        //     const voters = 100
-        //     const k = 5
-
-        //     const votes = generateVotes(voters, projects)
-        //     const kMeans1 = kmeanQFWithVotes(votes, voters, projects, k, 100)
-        //     const kMeans2 = kmeanQFWithVotes(votes, voters, projects, k, 200)
-        //     const kMeans3 = kmeanQFWithVotes(votes, voters, projects, k, 300)
-
-        //     for (let i = 0; i < projects; i ++) {
-        //         expect(kMeans1.qfs[i]).toBeGreaterThan(kMeans2.qfs[i])
-        //         expect(kMeans2.qfs[i]).toBeGreaterThan(kMeans3.qfs[i])
-        //     }
-        // })
-    })
-})
 
 describe("k-means with actual data", () => {
     const data: UserBallot[] = [
@@ -1139,7 +923,7 @@ describe("k-means with actual data", () => {
         })
     })
 
-    describe("calculateCoefficents", () => {
+    describe("calculateCoefficients", () => {
         const clustersSize: Cluster[] = [{
             index: 0,
             size: 2
@@ -1150,26 +934,26 @@ describe("k-means with actual data", () => {
             index: 2,
             size: 10
         }]
-        it("should return the correct coefficients (1/clusterSize)", () => {
-            expect(calculateCoefficents(clustersSize)).toEqual(
+        it("should return the correct coefficients (clusterSize/ballots)", () => {
+            expect(calculateCoefficents(clustersSize, 3)).toEqual(
                 [
                     {
                         clusterIndex: 0,
-                        coefficient: 0.5
+                        coefficient: 0.6666666666666666
                     },
                     {
                         clusterIndex: 1,
-                        coefficient: 0.3333333333333333
+                        coefficient: 1
                     },
                     {
                         clusterIndex: 2,
-                        coefficient: 0.1
+                        coefficient: 3.3333333333333335
                     }
                 ]
             )
         })
         it("should return a coefficient of 1 if the cluster size is 0", () => {
-            expect(calculateCoefficents([{ index: 0, size: 0 }])).toEqual([{ clusterIndex: 0, coefficient: 1 }])
+            expect(calculateCoefficents([{ index: 0, size: 0 }], 3)).toEqual([{ clusterIndex: 0, coefficient: 1 }])
         })
     })
 
@@ -1547,18 +1331,17 @@ describe("k-means with actual data", () => {
 
             expect(iterations).toBeGreaterThan(1)
             const sizes = calculateClustersSize(assignments, projects)
-            const coefficients = calculateCoefficents(sizes)
+            const coefficients = calculateCoefficents(sizes, ballots.length)
             const userCoefficients = assignVotersCoefficient(assignments, coefficients)
 
             for (const coefficient of coefficients) {
-                console.log("COEFF", coefficient)
                 expect(coefficient.coefficient).toBeGreaterThanOrEqual(0)
                 expect(coefficient.coefficient).toBeLessThanOrEqual(1)
             }
 
             // calculate qf
             const qfs: number[] = []
-            for (let i = 0; i < projects; i++) qfs.push(calculateQFPerProject(userCoefficients, ballots, i))
+            for (let i = 0; i < projects; i++) qfs.push(calculateQFPerProjectCoeffSquareBeforeCoefficient(userCoefficients, ballots, i))
 
             expect(qfs.length).toBe(projects)
 

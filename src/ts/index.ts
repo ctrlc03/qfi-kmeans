@@ -25,33 +25,18 @@ export {
     calculateCentroidsWithIndexes,
     calculateClustersSize,
     calculateCoefficents,
+    calculateCoefficentsOneMinus,
     calculateDistance,
-    calculateQFPerProject,
+    calculateQFPerProjectCoeffSquareBeforeCoefficient,
+    calculateQFPerProjectSquareAfterCoefficient,
     calculateTraditionalQF,
     calculateTraditionalQFForAllProjects,
     checkConvergence,
     updateCentroids,
     assignVotersCoefficient,
     assignVotesToClusters,
-    kmeansQF,
-    kmeansQFFixedIndexes,
     outputToJSON
 } from "./k-means.js"
-
 export {
-    testKmeanQFWithVotes,
-    testAssignVotersCoefficient,
-    testAssignVotesToClusters,
-    testCalculateCentroids,
-    testCalculateClustersSize,
-    testCalculateCoefficents,
-    testCalculateDistance,
-    testCalculateTraditionalQF,
-    testCheckConvergence,
-    testGenerateIndexes,
-    testGenerateVector,
-    testGenerateVotes,
-    testKmeansQF,
-    testRunQFWithVotesMultipleTimes,
-    testUpdateCentroids
-} from "./kMeansRandomData.js"
+    KMeans
+} from "./k_means.js"
