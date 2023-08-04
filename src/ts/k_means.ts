@@ -52,6 +52,8 @@ export class KMeans {
     public initialCentroids: number[][] = []
     // within cluster sum of squares
     public wcss: number = 0
+    // penalties per project
+    public penalties: number[] = []
 
     // initialize the k-means object with k and ballots
     constructor(
@@ -80,6 +82,7 @@ export class KMeans {
 
         // add zero votes to the ballots
         this.addZeroVotesToBallots()
+
         // store the weights in a seperate array so we do not 
         // have to extract them everytime we need them
         this.weights = this.ballots.map(ballot => ballot.votes.map(vote => vote.voteWeight))
@@ -106,8 +109,14 @@ export class KMeans {
         // if we haven't converged after max iterations
         if (!this.converged) this.actualIterations = this.maxIterations
 
+        // calculate cluster sizes
+        this.calculateClustersSize()
+
         // calculate wcss
         this.calculateWCSS()
+
+        // @note run 100 times per k and store the variance between the cluster sizes
+        // check where it changes less between each run 
     }
 
     /**
@@ -179,10 +188,11 @@ export class KMeans {
         // modify the array passed as reference
         this.ballots.forEach((ballot, index) => {
             const missingVotes = KMeans.extractZeroVotes(ballot, this.projects);
+            
             this.ballots[index] = {
                 votes: [...missingVotes.votes]
             }
-        })
+        })  
     }
 
     /**
@@ -255,7 +265,7 @@ export class KMeans {
         }
 
         // if no centroid was seleted, we return the last one
-        // should not hit
+        // @note this should not hit
         return weights[weights.length-1]
     }
 
@@ -424,7 +434,6 @@ export class KMeans {
                     )?.coefficient || 1
             })
         }
-    
         this.votersCoefficients = votersCoefficients
     }
 
@@ -437,7 +446,7 @@ export class KMeans {
         this.kMeansQFs = []
     
         // loop through the projects
-        for (let i = 1; i < this.projects; i++) {
+        for (let i = 0; i < this.projects; i++) {
             // interim sum 
             let sum = 0
             // loop through votes array
@@ -457,10 +466,13 @@ export class KMeans {
      * and the coefficients. The coefficients are applied after sqrt(weight)
      */
     public calculateQFPerProjectSquareBeforeCoefficient = () => {
+        // reset
+        this.kMeansQFs = []
+
         // =SUM([vote1User1*s,vote1User2*r,vote1User3*t]**0.5)**2
 
         // loop through the projects
-        for (let i = 1; i < this.projects; i++) {
+        for (let i = 0; i < this.projects; i++) {
             // interim sum 
             let sum = 0
             // loop through votes array
@@ -500,27 +512,29 @@ export class KMeans {
      * Check whether the centroids have converged
      */
     public checkConvergence = () => {
+        // default is that it converged
+        this.converged = true 
+
         // Check if the dimensions of the centroids match
         if (
             this.previousCentroids.length !== this.centroids.length || 
             this.previousCentroids[0].length !== this.centroids[0].length
         ) {
             this.converged = false
-            return 
-        }
-      
-        // Check if the centroids have converged
-        for (let i = 0; i < this.previousCentroids.length; i++) {
-            for (let j = 0; j < this.previousCentroids[i].length; j++) {
-                const distance = Math.abs(this.previousCentroids[i][j] - this.centroids[i][j])
-                if (distance > this.tolerance) {
-                    this.converged = false
-                    return 
+        } else {
+            // Check if the centroids have converged
+            outerloop: 
+            for (let i = 0; i < this.previousCentroids.length; i++) {
+                for (let j = 0; j < this.previousCentroids[i].length; j++) {
+                    const distance = Math.abs(this.previousCentroids[i][j] - this.centroids[i][j])
+                    if (distance > this.tolerance) {
+                        this.converged = false
+                        // break out
+                        break outerloop 
+                    }
                 }
             }
-        }
-    
-        this.converged = true 
+        }      
     }
 
     /**
@@ -531,11 +545,15 @@ export class KMeans {
     public runAlgorithm1MinusSquareBefore = () => {
         // calculate the coefficients
         this.calculateCoefficentsOneMinus()
+
         // assign each voter to its coefficient and cluster number
         this.assignVotersCoefficient()
 
         // calculate the QF for each project
         this.calculateQFPerProjectSquareBeforeCoefficient()
+
+        // calculate the penalties
+        this.calculateDifferenceBetweenKMeansAndtraditional()
     }
 
     /**
@@ -546,11 +564,15 @@ export class KMeans {
     public runAlgorithmSquareBefore = () => {
         // calculate the coefficients
         this.calculateCoefficents()
+
         // assign each voter to its coefficient and cluster number
         this.assignVotersCoefficient()
 
         // calculate the QF for each project
         this.calculateQFPerProjectSquareBeforeCoefficient()
+
+        // calculate the penalties
+        this.calculateDifferenceBetweenKMeansAndtraditional()         
     }
 
 
@@ -562,11 +584,15 @@ export class KMeans {
     public runAlgorithm1MinusSquareAfter = () => {
         // calculate the coefficients
         this.calculateCoefficentsOneMinus()
+
         // assign each voter to its coefficient and cluster number
         this.assignVotersCoefficient()
 
         // calculate the QF for each project
         this.calculateQFPerProjectSquareAfterCoefficient()
+
+        // calculate the penalties
+        this.calculateDifferenceBetweenKMeansAndtraditional()
     }
 
     /**
@@ -577,11 +603,15 @@ export class KMeans {
     public runAlgorithmSquareAfter = () => {
         // calculate the coefficients
         this.calculateCoefficents()
+
         // assign each voter to its coefficient and cluster number
         this.assignVotersCoefficient()
 
         // calculate the QF for each project
         this.calculateQFPerProjectSquareAfterCoefficient()
+
+        // calculate the penalties
+        this.calculateDifferenceBetweenKMeansAndtraditional()
     }
 
     /**
@@ -604,6 +634,19 @@ export class KMeans {
     }
 
     /**
+     * Calculate how much a project has been penalized
+     */
+    public calculateDifferenceBetweenKMeansAndtraditional = () => {
+        // reset penalties
+        this.penalties = []
+        // loop through the projects
+        for (let i = 0; i < this.projects; i++) {
+            // calculate the difference between the two QFs
+            this.penalties.push(this.traditionalQFs[i] - this.kMeansQFs[i])
+        }
+    }
+
+    /**
      * Write the output to a file
      * @param filePath <string> the path to the file
      */
@@ -615,13 +658,15 @@ export class KMeans {
             tradQFs: this.traditionalQFs,
             assignments: this.assignments,
             centroids: this.centroids,
-            votersCoefficients: this.votersCoefficients,
+            votersCoefficients: this.votersCoefficients.map((coeff) => coeff.coefficent),
             projects: this.projects,
             initialCentroids: this.initialCentroids,
             voters: this.weights.length,
-            wcss: this.wcss
+            wcss: this.wcss,
+            penalties: this.penalties,
+            clustersSizes: this.clustersSizes,
         }
     
-        fs.writeFileSync(filePath, JSON.stringify(output))
+        fs.writeFileSync(filePath, JSON.stringify(output, null, 4))
     }
 }

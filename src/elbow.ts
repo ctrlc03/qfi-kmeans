@@ -9,14 +9,24 @@ const main = () => {
 
     let wcss = []
 
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 3; i <= 10; i++) {
         const kMeans = new KMeans(i, ballots, true)
         wcss.push(kMeans.wcss)
+
+        // run kMeans calculations in different ways
+        kMeans.runAlgorithm1MinusSquareAfter()
+        kMeans.writeToFile(`./tests/data/output_k_means_k_${i}_${iteration}_one_minus_square_after.json`)
+        kMeans.runAlgorithm1MinusSquareBefore()
+        kMeans.writeToFile(`./tests/data/output_k_means_k_${i}_${iteration}_one_minus_square_before.json`)
+        kMeans.runAlgorithmSquareAfter()
+        kMeans.writeToFile(`./tests/data/output_k_means_k_${i}_${iteration}_square_after.json`)
+        kMeans.runAlgorithmSquareBefore()
+        kMeans.writeToFile(`./tests/data/output_k_means_k_${i}_${iteration}_square_before.json`)
     }
 
     fs.writeFileSync(`./tests/data/wcss_${iteration}.json`, JSON.stringify({
         "wcss": wcss
-    }))
+    }, null, 4))
 }
 
 main()

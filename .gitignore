@@ -3,6 +3,7 @@ node_modules
 build
 dist 
 yarn-error.log
-tests/data/output_*.json
+tests/data/**/*output_*.json
 tests/plots
 tests/artifacts
+tests/data 

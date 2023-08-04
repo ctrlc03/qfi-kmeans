@@ -80,7 +80,7 @@ export const parseVoteData = (data: string): UserBallot[] => {
             // create the tmp Vote object
             userVotes.push({
                 voteOption: parseInt(ballot[key].voteOption),
-                voteWeight: parseInt(ballot[key].voteWeight)
+                voteWeight: parseFloat(ballot[key].voteWeight)
             })
         })
 

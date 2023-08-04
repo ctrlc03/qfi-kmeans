@@ -3,7 +3,7 @@ import json
 import sys 
 
 def read_data(): 
-    with open(f'./tests/data/wcss_{sys.argv[1]}.json') as f:
+    with open(f'./tests/data/gitcoin/output/{sys.argv[1]}') as f:
         data = json.load(f)
 
     return data
@@ -20,7 +20,7 @@ def plot_wcss(wcss):
     plt.ylabel('WCSS score')
 
     # save
-    plt.savefig(f'./tests/plots/elbow_method_{sys.argv[1]}.png', dpi=300)
+    plt.savefig(f'./tests/plots/gitcoin/elbow_method_{sys.argv[1]}.png', dpi=300)
 
 if __name__ == "__main__":
     data = read_data()

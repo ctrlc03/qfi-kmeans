@@ -5,13 +5,14 @@ import sys
 def read_data(): 
     k = sys.argv[1]
     iteration = sys.argv[2]
-    with open(f"./tests/data/output_k_means_k_{k}_{iteration}_one_minus_square_before.json") as one_minus_before:
+    filename = sys.argv[3]
+    with open(f"./tests/data/gitcoin/output/{filename}_output_k_means_k_{k}_{iteration}_one_minus_square_before.json") as one_minus_before:
         one_minus_before_data = json.load(one_minus_before)
-    with open(f"./tests/data/output_k_means_k_{k}_{iteration}_one_minus_square_after.json") as one_minus_after:
+    with open(f"./tests/data/gitcoin/output/{filename}_output_k_means_k_{k}_{iteration}_one_minus_square_after.json") as one_minus_after:
         one_minus_after_data = json.load(one_minus_after)
-    with open(f"./tests/data/output_k_means_k_{k}_{iteration}_square_before.json") as before:
+    with open(f"./tests/data/gitcoin/output/{filename}_output_k_means_k_{k}_{iteration}_square_before.json") as before:
         before_data = json.load(before)
-    with open(f"./tests/data/output_k_means_k_{k}_{iteration}_square_after.json") as after:
+    with open(f"./tests/data/gitcoin/output/{filename}_output_k_means_k_{k}_{iteration}_square_after.json") as after:
         after_data = json.load(after)
 
     return one_minus_before_data,  one_minus_after_data, before_data, after_data
@@ -65,8 +66,8 @@ def plot_by_size_of_clusters(k, sizes):
 
     # save
     plt.savefig(
-        './tests/plots/plot_k_means_plus_plus_k_{k}_{iteration}_1_minus_sizes.png'
-        .format(k=k, iteration=sys.argv[2]), dpi=300
+        './tests/plots/gitcoin/{filename}_plot_k_means_plus_plus_k_{k}_{iteration}_1_minus_sizes.png'
+        .format(filename=sys.argv[3], k=k, iteration=sys.argv[2]), dpi=300
     )
 
 
@@ -137,15 +138,15 @@ if __name__ == "__main__":
     ) = parse_data()
 
     plot_by_size_of_clusters(k, sizes)
-    plot_by_user_coefficient(userCoefficients_one_minus, voters, f'./tests/plots/plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_user_coefficients_1_minus.png', f'User coefficients (1 - clusterSize/ballots) for k = {k}', 'b')
-    plot_by_user_coefficient(userCoefficients, voters, f'./tests/plots/plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_user_coefficients.png', f'User coefficients (clusterSize/ballots) for k = {k}', 'b')
+    plot_by_user_coefficient(userCoefficients_one_minus, voters, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_user_coefficients_1_minus.png', f'User coefficients (1 - clusterSize/ballots) for k = {k}', 'b')
+    plot_by_user_coefficient(userCoefficients, voters, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_user_coefficients.png', f'User coefficients (clusterSize/ballots) for k = {k}', 'b')
 
-    plot_by_qf_distribution(qfs_minus_before, projects, f'./tests/plots/plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_1_minus_square_before_coefficient.png', f'QF (1 - clusterSize/ballots and square root before coefficient) for k = {k}', 'b')
-    plot_by_qf_distribution(qfs_minus_after, projects, f'./tests/plots/plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_1_minus_square_after_coefficient.png', f'QF (1 - clusterSize/ballots and square root after coefficient) for k = {k}', 'r')
-    plot_by_qf_distribution(qfs_before, projects, f'./tests/plots/plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_before_coefficient.png', f'QF (clusterSize/ballots and square root before coefficient) for k = {k}' ,'g')
-    plot_by_qf_distribution(qfs_after, projects, f'./tests/plots/plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_after_coefficient.png', f'QF (clusterSize/ballots and square root after coefficient) for k = {k}','m')
+    plot_by_qf_distribution(qfs_minus_before, projects, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_1_minus_square_before_coefficient.png', f'QF (1 - clusterSize/ballots and square root before coefficient) for k = {k}', 'b')
+    plot_by_qf_distribution(qfs_minus_after, projects, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_1_minus_square_after_coefficient.png', f'QF (1 - clusterSize/ballots and square root after coefficient) for k = {k}', 'r')
+    plot_by_qf_distribution(qfs_before, projects, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_before_coefficient.png', f'QF (clusterSize/ballots and square root before coefficient) for k = {k}' ,'g')
+    plot_by_qf_distribution(qfs_after, projects, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_after_coefficient.png', f'QF (clusterSize/ballots and square root after coefficient) for k = {k}','m')
 
-    plot_by_penalties(penalties_minus_before, projects, f'./tests/plots/plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_1_minus_square_before_coefficient_penalties.png', f'Penalties (1 - clusterSize/ballots and square root before coefficient) for k = {k}', 'b')
-    plot_by_penalties(penalties_minus_after, projects, f'./tests/plots/plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_1_minus_square_after_coefficient_penalties.png', f'Penalties (1 - clusterSize/ballots and square root after coefficient) for k = {k}', 'r')
-    plot_by_penalties(penalties_before, projects, f'./tests/plots/plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_before_coefficient_penalties.png', f'Penalties (clusterSize/ballots and square root before coefficient) for k = {k}' ,'g')
-    plot_by_penalties(penalties_after, projects, f'./tests/plots/plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_after_coefficient_penalties.png', f'Penalties (clusterSize/ballots and square root after coefficient) for k = {k}','m')
+    plot_by_penalties(penalties_minus_before, projects, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_1_minus_square_before_coefficient_penalties.png', f'Penalties (1 - clusterSize/ballots and square root before coefficient) for k = {k}', 'b')
+    plot_by_penalties(penalties_minus_after, projects, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_1_minus_square_after_coefficient_penalties.png', f'Penalties (1 - clusterSize/ballots and square root after coefficient) for k = {k}', 'r')
+    plot_by_penalties(penalties_before, projects, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_before_coefficient_penalties.png', f'Penalties (clusterSize/ballots and square root before coefficient) for k = {k}' ,'g')
+    plot_by_penalties(penalties_after, projects, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_after_coefficient_penalties.png', f'Penalties (clusterSize/ballots and square root after coefficient) for k = {k}','m')
