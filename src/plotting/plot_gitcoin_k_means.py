@@ -70,23 +70,6 @@ def plot_by_size_of_clusters(k, sizes):
         .format(filename=sys.argv[3], k=k, iteration=sys.argv[2]), dpi=300
     )
 
-
-def plot_by_user_coefficient(coefficients, voters, path, title, color):
-
-    fig, ax = plt.subplots()
-    ax.bar(list(range(1, voters+1)), coefficients , color=color)
-
-    # Add a title and labels to the axes
-    plt.title(title)
-    plt.xlabel('Voters')
-    plt.xticks(list(range(1, voters+1)))
-    plt.xticks(rotation=90)
-    plt.tick_params(axis='x', labelsize=4)
-    plt.ylabel('Coefficient')
-
-    # save
-    plt.savefig(path, dpi=300)
-
 def plot_by_qf_distribution(qf, projects, path, title, color):
     fig, ax = plt.subplots()
     ax.bar(list(range(1, projects+1)), qf, color=color)
@@ -138,8 +121,6 @@ if __name__ == "__main__":
     ) = parse_data()
 
     plot_by_size_of_clusters(k, sizes)
-    plot_by_user_coefficient(userCoefficients_one_minus, voters, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_user_coefficients_1_minus.png', f'User coefficients (1 - clusterSize/ballots) for k = {k}', 'b')
-    plot_by_user_coefficient(userCoefficients, voters, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_user_coefficients.png', f'User coefficients (clusterSize/ballots) for k = {k}', 'b')
 
     plot_by_qf_distribution(qfs_minus_before, projects, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_1_minus_square_before_coefficient.png', f'QF (1 - clusterSize/ballots and square root before coefficient) for k = {k}', 'b')
     plot_by_qf_distribution(qfs_minus_after, projects, f'./tests/plots/gitcoin/{sys.argv[3]}_plot_k_means_plus_plus_k_{sys.argv[1]}_{sys.argv[2]}_1_minus_square_after_coefficient.png', f'QF (1 - clusterSize/ballots and square root after coefficient) for k = {k}', 'r')

@@ -32,7 +32,7 @@ def plot_by_trad_qf_distribution(trad_qf, projects):
 
     # save
     plt.savefig(
-        f'./tests/plots/gitcoin/{sys.argv[2].split("_")[:1]}_trad_qf.png', dpi=300
+        f'./tests/plots/gitcoin/k-6/{sys.argv[1]}_trad_qf.png', dpi=300
     )
 
 if __name__ == "__main__":

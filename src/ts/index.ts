@@ -6,7 +6,9 @@ export {
     Vote,
     UserBallot
 } from "./interfaces.js"
-
+export {
+    DBSCAN
+} from "./dbscan.js"
 export {
     randomIntegerIncluded,
     MAX_CONTRIBUTION_AMOUNT,
