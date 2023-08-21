@@ -1,0 +1,36 @@
+{
+    "sizes": [
+        {
+            "index": 0,
+            "size": 10
+        },
+        {
+            "index": 1,
+            "size": 3
+        },
+        {
+            "index": 2,
+            "size": 13
+        },
+        {
+            "index": 3,
+            "size": 3
+        },
+        {
+            "index": 4,
+            "size": 9
+        },
+        {
+            "index": 5,
+            "size": 8
+        },
+        {
+            "index": 6,
+            "size": 1
+        },
+        {
+            "index": 7,
+            "size": 2
+        }
+    ]
+}

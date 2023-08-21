@@ -70,6 +70,7 @@ export class KMeans {
         public _k: number, 
         public _ballots: UserBallot[],
         public _votesNeedSquaring: boolean = false,
+        public _mode: string = "cosine",
         public _projects: number = 0,
         public _tolerance: number = TOLERANCE,
         public _maxIterations: number = MAX_ITERATIONS
@@ -98,23 +99,26 @@ export class KMeans {
         this.weights = this.ballots.map(ballot => ballot.votes.map(vote => vote.voteWeight))
 
         // streamline the data - do the square root
-        // @todo if we square root the weights for normalizing the data, we need
-        // to ensure that QF calculations are done on the squared weights
-        this.weights = this.weights.map(row => row.map(weight => Math.sqrt(weight)))
+        if (!_votesNeedSquaring) this.weights = this.weights.map(row => row.map(weight => Math.sqrt(weight)))
 
         // calculate the initial centroids
-        this.calculateInitialCentroidsPlusPlus()
+        if (_mode === "cosine") this.calculateInitialCentroidsPlusPlusCosine()
+        else this.calculateInitialCentroidsPlusPlusEucledian()
 
         // calculate the traditional QF 
         this.calculateTraditionalQF()
 
         for (let i = 0; i < this.maxIterations; i++) {
             // assign each voter to a cluster
-            this.assignVotesToClustersCosine()
+            if (_mode === "cosine") this.assignVotesToClustersCosine()
+            else this.assignVotesToClustersEucledian()
+
             // update the centroids
             this.updateCentroids()
             // check if the centroids have converged
-            this.checkConvergenceCosine()
+            if (_mode === "cosine") this.checkConvergenceCosine()
+            else this.checkConvergence()
+
             if (this.converged) {
                 this.actualIterations = i
                 break 
@@ -127,22 +131,27 @@ export class KMeans {
         // calculate cluster sizes
         this.calculateClustersSize()
 
-        // calculate wcss
-        this.calculateWCSS()
+        if (_mode === "cosine") {
+            this.calculateWCSSCosine()
+            this.calculateSilhouetteScoreCosine()
+            this.calculateDaviesBouldinIndexCosine()
+            this.calculateDunnIndexCosine()
+        } else {
+            // calculate wcss
+            this.calculateWCSSEucledian()
 
-        // calculate silhoutte score
-        this.calculateSilhouetteScore()
+            // calculate silhoutte score
+            this.calculateSilhouetteScoreEucledian()
 
-        // calculate davies boulding index
-        this.calculateDaviesBouldinIndex()
+            // calculate davies boulding index
+            this.calculateDaviesBouldinIndexEucledian()
 
-        // calculate dunn score
-        this.calculateDunnIndex()
-
-        // we need to square the weights again as before we square rooted them
-        this.weights = this.weights.map(row => row.map(weight => Math.pow(weight, 2)))
-
-        // @todo add calculation of tolerance (1/1000 * highest vote weight)
+            // calculate dunn score
+            this.calculateDunnIndexEucledian()
+        }
+       
+        // we need to square the weights again if before we square rooted them
+        if (!_votesNeedSquaring) this.weights = this.weights.map(row => row.map(weight => Math.pow(weight, 2)))
     }
 
     /**
@@ -237,6 +246,8 @@ export class KMeans {
             magnitude2 += Math.pow(votes2[i], 2)
         }
 
+        // check for zeroes
+        if (magnitude1 === 0 || magnitude2 === 0) return 0
         return dotProduct / (Math.sqrt(magnitude1) * Math.sqrt(magnitude2))
     }
 
@@ -305,12 +316,13 @@ export class KMeans {
      * Take the ballot weights and the centroids and 
      * return an array of distances between the weights and
      * their nearest centroid
+     * 1 - Min of cosine similarity (convert to a distance metric)
      * @param weights <number[][]> The weights
      * @param centroids <number[][]> The centroids
      * @returns <number[]> The distances
      */
-    public static calculateDistancePlusPlus = (weights: number[][], centroids: number[][]): number[] => {
-        return weights.map(weight => Math.max(...centroids.map(centroid => KMeans.calculateCosineSimilarity(weight, centroid))))
+    public static calculateDistancePlusPlusCosine = (weights: number[][], centroids: number[][]): number[] => {
+        return weights.map(weight => 1 - Math.min(...centroids.map(centroid => KMeans.calculateCosineSimilarity(weight, centroid))))
     }
 
     /**
@@ -352,19 +364,46 @@ export class KMeans {
 
         // if no centroid was seleted, we return the last one
         // @note this should not hit
+        console.log("returning last one")
         return weights[weights.length-1]
     }
 
     /**
      * Calculate the initial centroids based on the k-means++ algo
+     * using cosine similarity
      */
-    public calculateInitialCentroidsPlusPlus = () => {
+    public calculateInitialCentroidsPlusPlusCosine = () => {
         // select the first centroid randomly
         this.centroids = [this.weights[randomIntegerIncluded(0, this.weights.length-1)]]
         
         // select the other centroids based on the distance from this centroid
         while (this.centroids.length < this.k) {
-            const distances = KMeans.calculateDistancePlusPlus(this.weights, this.centroids)
+            const distances = KMeans.calculateDistancePlusPlusCosine(this.weights, this.centroids)
+            // cache so we can use it to store the indexes
+            const centroid = KMeans.selectNextCentroid(this.weights, distances)
+            // check that we don't have the same centroid
+            if (!this.centroids.some(c => KMeans.arraysEqual(c, centroid))) {
+                this.centroids.push(centroid)
+                // store the index of the centroid (in which position it is in the weights array)
+                this.indexes.push(this.weights.indexOf(centroid))
+            }
+        }
+
+        // store the initial centroids
+        this.initialCentroids = this.centroids
+    }
+
+    /**
+     * Calculate the initial centroids based on the k-means++ algo
+     * using eucledian distance
+     */
+    public calculateInitialCentroidsPlusPlusEucledian = () => {
+        // select the first centroid randomly
+        this.centroids = [this.weights[randomIntegerIncluded(0, this.weights.length-1)]]
+        
+        // select the other centroids based on the distance from this centroid
+        while (this.centroids.length < this.k) {
+            const distances = KMeans.calculateDistancePlusPlusEucledian(this.weights, this.centroids)
             // cache so we can use it to store the indexes
             const centroid = KMeans.selectNextCentroid(this.weights, distances)
             this.centroids.push(centroid)
@@ -437,7 +476,7 @@ export class KMeans {
         const assignments: number[] = []
         // loop through each vote
         for (const ballot of this.ballots) {
-            let minSimilarity = Infinity
+            let maxSimilarity = -Infinity
             let clusterIndex = -1
             const weights = ballot.votes.map(vote => vote.voteWeight)
             // loop through the centroids
@@ -452,8 +491,8 @@ export class KMeans {
                 const similarity = KMeans.calculateCosineSimilarity(weights, this.centroids[i])
 
                 // check if we have a new minimum distance 
-                if (similarity < minSimilarity) {
-                    minSimilarity = similarity
+                if (similarity > maxSimilarity) {
+                    maxSimilarity = similarity
                     // once we found it - we assign the vote array to the nearest cluster
                     clusterIndex = i
                 }
@@ -503,7 +542,7 @@ export class KMeans {
      */
     public calculateClustersSize = () => {
         const clustersSizes: Cluster[] = Array.from({length: this.k}, (_, index) => ({index: index, size: 0}));
-        
+
         for (const assignment of this.assignments) clustersSizes[assignment].size++;
     
         this.clustersSizes = clustersSizes
@@ -799,7 +838,7 @@ export class KMeans {
     /**
      * Calculate the WCSS
      */
-    public calculateWCSS = () => {
+    public calculateWCSSEucledian = () => {
         // reset the wcss
         this.wcss = 0
         // make sure this is only run after the ballots have been assigned to a cluster
@@ -816,12 +855,28 @@ export class KMeans {
     }
 
     /**
+     * Calculate the WCSS using dissimilarity
+     */
+    public calculateWCSSCosine = () => {
+        this.wcss = 0
+        if (this.assignments.length === 0) 
+            throw new Error("This function must be run after the ballots have been assigned to a cluster")
+        
+            for (let i = 0; i < this.weights.length; i++) {
+            const closestCentroid = this.assignments[i]
+            const similarity = KMeans.calculateCosineSimilarity(this.weights[i], this.centroids[closestCentroid])
+            this.wcss += (1 - similarity)
+        }
+    }
+    
+
+    /**
      * Calculate the silhouette score
      * s(i)= 
         max{a(i),b(i)}
         b(i)−a(i)
      */
-    public calculateSilhouetteScore = (): void => {
+    public calculateSilhouetteScoreEucledian = (): void => {
         const numDataPoints = this.weights.length
     
         // 1. Precompute pairwise distances
@@ -869,8 +924,61 @@ export class KMeans {
         if (isNaN(this.silhoutteScore)) this.silhoutteScore = 0
     }
 
+    /**
+     * Calculate the silhouette score
+     * using cosine similarity
+     */
+    public calculateSilhouetteScoreCosine = (): void => {
+        const numDataPoints = this.weights.length
+    
+        // 1. Precompute pairwise distances
+        const distanceMatrix: number[][] = Array.from({ length: numDataPoints }, () => new Array<number>(numDataPoints).fill(0))
+    
+        for (let i = 0; i < numDataPoints; i++) {
+            for (let j = i + 1; j < numDataPoints; j++) {
+                const distance = 1 - KMeans.calculateCosineSimilarity(this.weights[i], this.weights[j])
+                distanceMatrix[i][j] = distance
+                distanceMatrix[j][i] = distance // Symmetry in distance
+            }
+        }
+    
+        // 2. Organize data points by cluster
+        const clusters: number[][] = Array.from({ length: this.k }, () => [])
+    
+        this.assignments.forEach((clusterIdx, weightIdx) => {
+            clusters[clusterIdx].push(weightIdx)
+        });
+    
+        // 3. Calculate silhouette scores
+        const silhouetteValues: number[] = []
+    
+        for (let i = 0; i < numDataPoints; i++) {
+            const ownClusterIdx = this.assignments[i]
+            const ownCluster = clusters[ownClusterIdx].filter(idx => idx !== i) // Exclude the current data point
+    
+            // Calculate a (average distance to points in the same cluster)
+            const a = ownCluster.length ? ownCluster.reduce((sum, idx) => sum + distanceMatrix[i][idx], 0) / ownCluster.length : 0;
+    
+            // Calculate b (smallest average distance to points in another cluster)
+            let b = Infinity
+            for (let j = 0; j < this.k; j++) {
+                if (j !== ownClusterIdx) {
+                    const otherClusterAvg = clusters[j].reduce((sum, idx) => sum + distanceMatrix[i][idx], 0) / clusters[j].length
+                    b = Math.min(b, otherClusterAvg)
+                }
+            }
+    
+            silhouetteValues.push((b - a) / Math.max(a, b))
+        }
+    
+        this.silhoutteScore = silhouetteValues.reduce((sum, val) => sum + val, 0) / silhouetteValues.length
+
+        if (isNaN(this.silhoutteScore)) this.silhoutteScore = 0
+    }
+
     // Function to calculate the average distance of points in a cluster to its centroid
-    private calculateSi(clusterPoints: number[][], centroid: number[]): number {
+    // using eucledian distance
+    private calculateSiEucledian(clusterPoints: number[][], centroid: number[]): number {
         const sumOfDistances = clusterPoints.reduce(
             (sum, point) => sum + KMeans.calculateDistanceEucledian(point, centroid),
             0
@@ -879,14 +987,25 @@ export class KMeans {
         return sumOfDistances / clusterPoints.length
     }
 
+    // Function to calculate the average distance of points in a cluster to its centroid
+    // using cosine similarity 
+    private calculateSiCosine(clusterPoints: number[][], centroid: number[]): number {
+        const sumOfDistances = clusterPoints.reduce(
+            (sum, point) => sum + ( 1- KMeans.calculateCosineSimilarity(point, centroid)),
+            0
+        )
+
+        return sumOfDistances / clusterPoints.length
+    }
+
     // Function to calculate Davies-Bouldin Index
-    public calculateDaviesBouldinIndex = () => {
+    public calculateDaviesBouldinIndexEucledian = () => {
         const R: number[] = []
         
         for (let i = 0; i < this.k; i++) {
             const clusterIPoints = this.weights.filter((_, index) => this.assignments[index] === i)
             const centroidI = this.centroids[i]
-            const Si = this.calculateSi(clusterIPoints, centroidI)
+            const Si = this.calculateSiEucledian(clusterIPoints, centroidI)
 
             let maxRij = -Infinity
 
@@ -894,7 +1013,7 @@ export class KMeans {
                 if (i !== j) {
                     const clusterJPoints = this.weights.filter((_, index) => this.assignments[index] === j)
                     const centroidJ = this.centroids[j]
-                    const Sj = this.calculateSi(clusterJPoints, centroidJ)
+                    const Sj = this.calculateSiEucledian(clusterJPoints, centroidJ)
                     const Mij = Math.sqrt(KMeans.calculateDistanceEucledian(centroidI, centroidJ))
 
                     const Rij = (Si + Sj) / Mij
@@ -911,23 +1030,41 @@ export class KMeans {
         this.daviesBouldingIndex = R.reduce((sum, val) => sum + val, 0) / this.k
     }
 
-    /**
-     * Calculate how much a project has been penalized
-     */
-    public calculateDifferenceBetweenKMeansAndtraditional = () => {
-        // reset penalties
-        this.penalties = []
-        // loop through the projects
-        for (let i = 0; i < this.projects; i++) {
-            // calculate the difference between the two QFs
-            this.penalties.push(this.traditionalQFs[i] - this.kMeansQFs[i])
+    public calculateDaviesBouldinIndexCosine = () => {
+        const R: number[] = []
+        
+        for (let i = 0; i < this.k; i++) {
+            const clusterIPoints = this.weights.filter((_, index) => this.assignments[index] === i)
+            const centroidI = this.centroids[i]
+            const Si = this.calculateSiEucledian(clusterIPoints, centroidI)
+
+            let maxRij = -Infinity
+
+            for (let j = 0; j < this.k; j++) {
+                if (i !== j) {
+                    const clusterJPoints = this.weights.filter((_, index) => this.assignments[index] === j)
+                    const centroidJ = this.centroids[j]
+                    const Sj = this.calculateSiCosine(clusterJPoints, centroidJ)
+                    const Mij = 1 - KMeans.calculateCosineSimilarity(centroidI, centroidJ)
+
+                    const Rij = (Si + Sj) / Mij
+                    if (Rij > maxRij) {
+                        maxRij = Rij
+                    }
+                }
+            }
+
+            R.push(maxRij)
         }
+
+        // Calculate the Davies-Bouldin Index as the average of the R values
+        this.daviesBouldingIndex = R.reduce((sum, val) => sum + val, 0) / this.k
     }
 
     /**
      * Calculate the average intra-cluster distance
      */
-    public calculateIntraClusterDistance = () => {
+    public calculateIntraClusterDistanceEucledian = () => {
         let sumDistances = 0
         let numDistances = 0
         
@@ -946,10 +1083,29 @@ export class KMeans {
         this.intraClusterDistance = sumDistances / numDistances
     }
 
+    public calculateIntraClusterDistanceCosine = () => {
+        let sumDistances = 0
+        let numDistances = 0
+        
+        for (let i = 0; i < this.k; i++) {
+            const clusterPoints = this.weights.filter((_, index) => this.assignments[index] === i)
+            
+            for (let j = 0; j < clusterPoints.length; j++) {
+                for (let k = j + 1; k < clusterPoints.length; k++) {
+                    const distance = 1 - KMeans.calculateCosineSimilarity(clusterPoints[j], clusterPoints[k])
+                    sumDistances += distance
+                    numDistances++
+                }
+            }
+        }
+        
+        this.intraClusterDistance = sumDistances / numDistances
+    }
+
     /**
      * Calculate the maximum inter-cluster distance
      */
-    public calculateInterClusterDistance = () => {
+    public calculateInterClusterDistanceEucledian = () => {
         let maxDistance = 0
 
         for (let i = 0; i < this.k; i++) {
@@ -964,15 +1120,51 @@ export class KMeans {
         this.interClusterDistance = maxDistance
     }
 
+    public calculateInterClusterDistanceCosine = () => {
+        let maxDistance = 0
+
+        for (let i = 0; i < this.k; i++) {
+            for (let j = i + 1; j < this.k; j++) {
+                const distance = 1 - KMeans.calculateCosineSimilarity(this.centroids[i], this.centroids[j])
+                if (distance > maxDistance) {
+                    maxDistance = distance
+                }
+            }
+        }
+
+        this.interClusterDistance = maxDistance
+    }
+
     /**
      * Calculate the Dunn Index
      */
-    public calculateDunnIndex = () => {
-        this.calculateIntraClusterDistance()
-        this.calculateInterClusterDistance()
+    public calculateDunnIndexEucledian = () => {
+        this.calculateIntraClusterDistanceEucledian()
+        this.calculateInterClusterDistanceEucledian()
 
         this.dunnScore = this.intraClusterDistance / this.interClusterDistance
     }
+
+    public calculateDunnIndexCosine = () => {
+        this.calculateIntraClusterDistanceCosine()
+        this.calculateInterClusterDistanceCosine()
+
+        this.dunnScore = this.intraClusterDistance / this.interClusterDistance
+    }
+
+    /**
+     * Calculate how much a project has been penalized
+     */
+    public calculateDifferenceBetweenKMeansAndtraditional = () => {
+        // reset penalties
+        this.penalties = []
+        // loop through the projects
+        for (let i = 0; i < this.projects; i++) {
+            // calculate the difference between the two QFs
+            this.penalties.push(this.traditionalQFs[i] - this.kMeansQFs[i])
+        }
+    }
+    
 
     /**
      * Write the output to a file
