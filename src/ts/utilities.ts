@@ -54,4 +54,4 @@ export const MAX_CONTRIBUTION_AMOUNT = 50
 // how many times should we run the algorithm
 export const MAX_ITERATIONS = 100
 // @todo calculate tolerance based on the number of projects, voters, vote amounts
-export const TOLERANCE = 0.5
+export const TOLERANCE = 0.1

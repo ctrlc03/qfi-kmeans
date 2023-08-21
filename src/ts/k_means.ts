@@ -100,7 +100,7 @@ export class KMeans {
         // streamline the data - do the square root
         // @todo if we square root the weights for normalizing the data, we need
         // to ensure that QF calculations are done on the squared weights
-        // this.weights = this.weights.map(row => row.map(weight => Math.sqrt(weight)))
+        this.weights = this.weights.map(row => row.map(weight => Math.sqrt(weight)))
 
         // calculate the initial centroids
         this.calculateInitialCentroidsPlusPlus()
@@ -110,11 +110,11 @@ export class KMeans {
 
         for (let i = 0; i < this.maxIterations; i++) {
             // assign each voter to a cluster
-            this.assignVotesToClusters()
+            this.assignVotesToClustersCosine()
             // update the centroids
             this.updateCentroids()
             // check if the centroids have converged
-            this.checkConvergence()
+            this.checkConvergenceCosine()
             if (this.converged) {
                 this.actualIterations = i
                 break 
@@ -138,6 +138,9 @@ export class KMeans {
 
         // calculate dunn score
         this.calculateDunnIndex()
+
+        // we need to square the weights again as before we square rooted them
+        this.weights = this.weights.map(row => row.map(weight => Math.pow(weight, 2)))
 
         // @todo add calculation of tolerance (1/1000 * highest vote weight)
     }
@@ -219,6 +222,25 @@ export class KMeans {
     }
 
     /**
+     * Calculate the Cosine Similarity between two ballots
+     */
+    public static calculateCosineSimilarity = (
+        votes1: number[],
+        votes2: number[]
+    ): number => {
+        if (votes1.length !== votes2.length) throw new Error("The two arrays of votes should have the same length")
+
+        let dotProduct = 0, magnitude1 = 0, magnitude2 = 0
+        for (let i = 0; i < votes1.length; i++) {
+            dotProduct += votes1[i] * votes2[i]
+            magnitude1 += Math.pow(votes1[i], 2)
+            magnitude2 += Math.pow(votes2[i], 2)
+        }
+
+        return dotProduct / (Math.sqrt(magnitude1) * Math.sqrt(magnitude2))
+    }
+
+    /**
      * Calculate the euclidean distance (minus the square root) between two votes
      * @notice in a simple k-means algo we would have two points
      * @notice point1 = {x: vote1, y: vote2} and point2 = {x: vote1, y: vote2}
@@ -288,6 +310,18 @@ export class KMeans {
      * @returns <number[]> The distances
      */
     public static calculateDistancePlusPlus = (weights: number[][], centroids: number[][]): number[] => {
+        return weights.map(weight => Math.max(...centroids.map(centroid => KMeans.calculateCosineSimilarity(weight, centroid))))
+    }
+
+    /**
+     * Take the ballot weights and the centroids and 
+     * return an array of distances between the weights and
+     * their nearest centroid (uses Eucledian distance)
+     * @param weights <number[][]> The weights
+     * @param centroids <number[][]> The centroids
+     * @returns <number[]> The distances
+     */
+    public static calculateDistancePlusPlusEucledian = (weights: number[][], centroids: number[][]): number[] => {
         return weights.map(weight => Math.min(...centroids.map(centroid => KMeans.calculateDistanceEucledian(weight, centroid))))
     }
 
@@ -295,15 +329,15 @@ export class KMeans {
      * Selects the next centroid based on the k-means++ initialization
      * 
      * @param weights <number[][]> The weights
-     * @param distances <number[]> The distances
+     * @param distancesOrSimilarities <number[]> The distances
      * @returns <number[]> The next centroid
      */
-    public static selectNextCentroid = (weights: number[][], distances: number[]): number[] => {
+    public static selectNextCentroid = (weights: number[][], distancesOrSimilarities: number[]): number[] => {
         // sum all of the distances 
-        const sum = distances.reduce((a, b) => a + b, 0)
+        const sum = distancesOrSimilarities.reduce((a, b) => a + b, 0)
         // probabilities are the relative distance of a weight to the 
         // nearest centroid
-        const probabilities = distances.map(distance => distance / sum)
+        const probabilities = distancesOrSimilarities.map(distance => distance / sum)
         // generate a random number between 0 and 1
         const random = Math.random()
         let sumProbabilities = 0
@@ -358,8 +392,9 @@ export class KMeans {
 
     /**
      * Assign the votes to the nearest cluster
+     * using eucledian distance
      */
-    public assignVotesToClusters = () => {
+    public assignVotesToClustersEucledian = () => {
         // we store the assignments in this array of numbers
         const assignments: number[] = []
         // loop through each vote
@@ -381,6 +416,44 @@ export class KMeans {
                 // check if we have a new minimum distance 
                 if (distance < minDistance) {
                     minDistance = distance
+                    // once we found it - we assign the vote array to the nearest cluster
+                    clusterIndex = i
+                }
+            }
+            // store the cluster index in the assignments array
+            assignments.push(clusterIndex)
+        }
+
+        // each array of votes (of a contributor) is assigned to a cluster
+        this.assignments = assignments
+    }
+
+    /**
+     * Assign the votes to the nearest cluster
+     * using cosine similarity
+     */
+    public assignVotesToClustersCosine = () => {
+        // we store the assignments in this array of numbers
+        const assignments: number[] = []
+        // loop through each vote
+        for (const ballot of this.ballots) {
+            let minSimilarity = Infinity
+            let clusterIndex = -1
+            const weights = ballot.votes.map(vote => vote.voteWeight)
+            // loop through the centroids
+            for (let i = 0; i < this.centroids.length; i++) {
+                // break out early if the vote is the same as the centroid
+                if (KMeans.arraysEqual(weights, this.centroids[i])) {
+                    clusterIndex = i
+                    break 
+                }
+
+                // calculate the similarity between the vote array (for each user) and the centeroids
+                const similarity = KMeans.calculateCosineSimilarity(weights, this.centroids[i])
+
+                // check if we have a new minimum distance 
+                if (similarity < minSimilarity) {
+                    minSimilarity = similarity
                     // once we found it - we assign the vote array to the nearest cluster
                     clusterIndex = i
                 }
@@ -602,6 +675,48 @@ export class KMeans {
                 }
             }
         }      
+    }
+
+    /**
+     * Check if the centroids have converged
+     * using Cosine similarity
+     */
+    public checkConvergenceCosine = () => {
+        // default is that it converged
+        this.converged = true 
+
+        // Check if the dimensions of the centroids match
+        if (
+            this.previousCentroids.length !== this.centroids.length ||
+            this.previousCentroids[0].length !== this.centroids[0].length
+        ) {
+            this.converged = false
+            return
+        }
+
+        // Helper function to calculate dot product of two vectors
+        const dotProduct = (a: number[], b: number[]) => {
+            return a.reduce((sum, value, index) => sum + value * b[index], 0)
+        }
+
+        // Helper function to calculate magnitude of a vector
+        const magnitude = (a: number[]) => {
+            return Math.sqrt(a.reduce((sum, value) => sum + value * value, 0))
+        }
+
+        // Helper function to calculate cosine similarity of two vectors
+        const cosineSimilarity = (a: number[], b: number[]) => {
+            return dotProduct(a, b) / (magnitude(a) * magnitude(b))
+        }
+
+        // Check if the centroids have converged based on cosine similarity
+        for (let i = 0; i < this.previousCentroids.length; i++) {
+            const similarity = cosineSimilarity(this.previousCentroids[i], this.centroids[i])
+            if (Math.abs(1 - similarity) > this.tolerance) {
+                this.converged = false
+                return
+            }
+        }
     }
 
     /**
@@ -869,12 +984,12 @@ export class KMeans {
             coefficients: this.coefficients,
             qfs: this.kMeansQFs,
             tradQFs: this.traditionalQFs,
-            assignments: this.assignments,
-            centroids: this.centroids,
+            assignments: this.assignments, // in which clusters are the users?
+            centroids: this.centroids, // which ballots became centroids
             votersCoefficients: this.votersCoefficients.map((coeff) => coeff.coefficent),
             projects: this.projects,
             initialCentroids: this.initialCentroids,
-            voters: this.weights.length,
+            voters: this.weights.length, 
             wcss: this.wcss,
             penalties: this.penalties,
             clustersSizes: this.clustersSizes,
