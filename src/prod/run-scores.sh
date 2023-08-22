@@ -8,8 +8,12 @@ cosine="cosine"
 
 for i in {1..100}
 do  
+    echo "Running k-means scores iteration = $i"
     # run the k-means algo 
     npx ts-node --esm src/prod/run-kmeans-scores_gitcoin.ts $i
+
+    echo "Run all benchmarks iteration = $i"
+
     # plot the scores
     python3 src/prod/plot_scores.py "$eucledian/scores/$contract_1" $eucledian $i
     python3 src/prod/plot_scores.py "$eucledian/scores/$contract_2" $eucledian $i
@@ -19,4 +23,6 @@ do
     python3 src/prod/plot_scores.py "$cosine/scores/$contract_2" $cosine $i
     python3 src/prod/plot_scores.py "$cosine/scores/$contract_2" $cosine $i
     python3 src/prod/plot_scores.py "$cosine/scores/$contract_2" $cosine $i
+
+    echo "Finished plotting iteration = $i"
 done 
