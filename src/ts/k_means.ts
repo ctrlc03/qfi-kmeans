@@ -1036,7 +1036,7 @@ export class KMeans {
         for (let i = 0; i < this.k; i++) {
             const clusterIPoints = this.weights.filter((_, index) => this.assignments[index] === i)
             const centroidI = this.centroids[i]
-            const Si = this.calculateSiEucledian(clusterIPoints, centroidI)
+            const Si = this.calculateSiCosine(clusterIPoints, centroidI)
 
             let maxRij = -Infinity
 
@@ -1047,9 +1047,12 @@ export class KMeans {
                     const Sj = this.calculateSiCosine(clusterJPoints, centroidJ)
                     const Mij = 1 - KMeans.calculateCosineSimilarity(centroidI, centroidJ)
 
-                    const Rij = (Si + Sj) / Mij
-                    if (Rij > maxRij) {
-                        maxRij = Rij
+                    // Check for division by zero
+                    if (Mij !== 0) {
+                        const Rij = (Si + Sj) / Mij;
+                        if (Rij > maxRij) {
+                            maxRij = Rij;
+                        }
                     }
                 }
             }
