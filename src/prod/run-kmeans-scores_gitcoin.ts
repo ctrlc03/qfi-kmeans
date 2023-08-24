@@ -66,30 +66,32 @@ const main = () => {
     const dunnScoresCosine_3: number[] = []
 
     for (let k = 3; k < 21; k++) {
-        const kMeans_1 = new KMeans(k, ballots_1, false, "eucledian")
-        scores.push(kMeans_1.silhoutteScore)
-        dbIndexes.push(kMeans_1.daviesBouldingIndex)
-        elbows.push(kMeans_1.wcss)
-        dunnScores.push(kMeans_1.dunnScore)
+        // console.log("Running eucledian distance k-means")
+        // const kMeans_1 = new KMeans(k, ballots_1, false, "eucledian")
+        // scores.push(kMeans_1.silhoutteScore)
+        // dbIndexes.push(kMeans_1.daviesBouldingIndex)
+        // elbows.push(kMeans_1.wcss)
+        // dunnScores.push(kMeans_1.dunnScore)
 
-        const kMeans_2 = new KMeans(k, ballots_2, false, "eucledian")
-        scores_1.push(kMeans_2.silhoutteScore)
-        dbIndexes_1.push(kMeans_2.daviesBouldingIndex)
-        elbows_1.push(kMeans_2.wcss)
-        dunnScores_1.push(kMeans_2.dunnScore)
+        // const kMeans_2 = new KMeans(k, ballots_2, false, "eucledian")
+        // scores_1.push(kMeans_2.silhoutteScore)
+        // dbIndexes_1.push(kMeans_2.daviesBouldingIndex)
+        // elbows_1.push(kMeans_2.wcss)
+        // dunnScores_1.push(kMeans_2.dunnScore)
 
-        const kMeans_3 = new KMeans(k, ballots_3, false, "eucledian")
-        scores_2.push(kMeans_3.silhoutteScore)
-        dbIndexes_2.push(kMeans_3.daviesBouldingIndex)
-        elbows_2.push(kMeans_3.wcss)
-        dunnScores_2.push(kMeans_3.dunnScore)
+        // const kMeans_3 = new KMeans(k, ballots_3, false, "eucledian")
+        // scores_2.push(kMeans_3.silhoutteScore)
+        // dbIndexes_2.push(kMeans_3.daviesBouldingIndex)
+        // elbows_2.push(kMeans_3.wcss)
+        // dunnScores_2.push(kMeans_3.dunnScore)
 
-        const kMeans_4 = new KMeans(k, ballots_4, false, "eucledian")
-        scores_3.push(kMeans_4.silhoutteScore)
-        dbIndexes_3.push(kMeans_4.daviesBouldingIndex)
-        elbows_3.push(kMeans_4.wcss)
-        dunnScores_3.push(kMeans_4.dunnScore)
+        // const kMeans_4 = new KMeans(k, ballots_4, false, "eucledian")
+        // scores_3.push(kMeans_4.silhoutteScore)
+        // dbIndexes_3.push(kMeans_4.daviesBouldingIndex)
+        // elbows_3.push(kMeans_4.wcss)
+        // dunnScores_3.push(kMeans_4.dunnScore)
 
+        console.log("Running cosine distance k-means")
         const kMeans1 = new KMeans(k, ballots_1, false)
         scoresCosine.push(kMeans1.silhoutteScore)
         dbIndexesCosine.push(kMeans1.daviesBouldingIndex)
@@ -143,33 +145,33 @@ const main = () => {
         "dunnScores": dunnScoresCosine_3
     }, null, 4))
     
-    fs.writeFileSync(`./src/prod/gitcoin/eucledian/scores/data_0x1b165fe4da6bc58ab8370ddc763d367d29f50ef0_${iteration}.json`, JSON.stringify({
-        "silhoutteScores": scores,
-        "dbIndexes": dbIndexes,
-        "elbows": elbows,
-        "dunnScores": dunnScores
-    }, null, 4))
+    // fs.writeFileSync(`./src/prod/gitcoin/eucledian/scores/data_0x1b165fe4da6bc58ab8370ddc763d367d29f50ef0_${iteration}.json`, JSON.stringify({
+    //     "silhoutteScores": scores,
+    //     "dbIndexes": dbIndexes,
+    //     "elbows": elbows,
+    //     "dunnScores": dunnScores
+    // }, null, 4))
 
-    fs.writeFileSync(`./src/prod/gitcoin/eucledian/scores/data_0xd95a1969c41112cee9a2c931e849bcef36a16f4c_${iteration}.json`, JSON.stringify({
-        "silhoutteScores": scores_2,
-        "dbIndexes": dbIndexes_2,
-        "elbows": elbows_2,
-        "dunnScores": dunnScores_2
-    }, null, 4))
+    // fs.writeFileSync(`./src/prod/gitcoin/eucledian/scores/data_0xd95a1969c41112cee9a2c931e849bcef36a16f4c_${iteration}.json`, JSON.stringify({
+    //     "silhoutteScores": scores_2,
+    //     "dbIndexes": dbIndexes_2,
+    //     "elbows": elbows_2,
+    //     "dunnScores": dunnScores_2
+    // }, null, 4))
 
-    fs.writeFileSync(`./src/prod/gitcoin/eucledian/scores/data_0xdf75054cd67217aee44b4f9e4ebc651c00330938_${iteration}.json`, JSON.stringify({
-        "silhoutteScores": scores_3,
-        "dbIndexes": dbIndexes_3,
-        "elbows": elbows_3,
-        "dunnScores": dunnScores_3
-    }, null, 4))
+    // fs.writeFileSync(`./src/prod/gitcoin/eucledian/scores/data_0xdf75054cd67217aee44b4f9e4ebc651c00330938_${iteration}.json`, JSON.stringify({
+    //     "silhoutteScores": scores_3,
+    //     "dbIndexes": dbIndexes_3,
+    //     "elbows": elbows_3,
+    //     "dunnScores": dunnScores_3
+    // }, null, 4))
 
-    fs.writeFileSync(`./src/prod/gitcoin/eucledian/scores/data_0xe575282b376e3c9886779a841a2510f1dd8c2ce4_${iteration}.json`, JSON.stringify({
-        "silhoutteScores": scores_3,
-        "dbIndexes": dbIndexes_3,
-        "elbows": elbows_3,
-        "dunnScores": dunnScores_3
-    }, null, 4))
+    // fs.writeFileSync(`./src/prod/gitcoin/eucledian/scores/data_0xe575282b376e3c9886779a841a2510f1dd8c2ce4_${iteration}.json`, JSON.stringify({
+    //     "silhoutteScores": scores_3,
+    //     "dbIndexes": dbIndexes_3,
+    //     "elbows": elbows_3,
+    //     "dunnScores": dunnScores_3
+    // }, null, 4))
 
 }
 

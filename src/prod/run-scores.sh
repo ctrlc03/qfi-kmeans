@@ -6,7 +6,7 @@ contract_4="data_0xe575282b376e3c9886779a841a2510f1dd8c2ce4"
 eucledian="eucledian"
 cosine="cosine"
 
-for i in {1..100}
+for i in {1..2}
 do  
     echo "Running k-means scores iteration = $i"
     # run the k-means algo 
@@ -15,10 +15,10 @@ do
     echo "Run all benchmarks iteration = $i"
 
     # plot the scores
-    python3 src/prod/plot_scores.py "$eucledian/scores/$contract_1" $eucledian $i
-    python3 src/prod/plot_scores.py "$eucledian/scores/$contract_2" $eucledian $i
-    python3 src/prod/plot_scores.py "$eucledian/scores/$contract_2" $eucledian $i
-    python3 src/prod/plot_scores.py "$eucledian/scores/$contract_2" $eucledian $i
+    # python3 src/prod/plot_scores.py "$eucledian/scores/$contract_1" $eucledian $i
+    # python3 src/prod/plot_scores.py "$eucledian/scores/$contract_2" $eucledian $i
+    # python3 src/prod/plot_scores.py "$eucledian/scores/$contract_2" $eucledian $i
+    # python3 src/prod/plot_scores.py "$eucledian/scores/$contract_2" $eucledian $i
     python3 src/prod/plot_scores.py "$cosine/scores/$contract_1" $cosine $i
     python3 src/prod/plot_scores.py "$cosine/scores/$contract_2" $cosine $i
     python3 src/prod/plot_scores.py "$cosine/scores/$contract_2" $cosine $i
